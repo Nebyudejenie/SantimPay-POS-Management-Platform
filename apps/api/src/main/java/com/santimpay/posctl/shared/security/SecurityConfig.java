@@ -47,7 +47,8 @@ public class SecurityConfig {
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
                 .requestMatchers(
                     "/v3/api-docs", "/v3/api-docs/**",
-                    "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    "/swagger-ui/**", "/swagger-ui.html",
+                    "/error").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/health/reports", "/api/v1/health/reports:bulk")
                     .hasAuthority("PERM_device:telemetry")
                 .requestMatchers("/api/v1/**").authenticated()
