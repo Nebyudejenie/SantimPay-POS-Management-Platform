@@ -44,7 +44,7 @@ public class OutboxRelay {
 
         for (OutboxEvent event : batch) {
             try {
-                String stream = "posctl.events." + event.aggregateType();
+                String stream = "posctl.events." + event.getAggregateType();
                 redis.opsForStream().add(StreamRecords.mapBacked(Map.of(
                         "eventId", event.getId().toString(),
                         "eventType", event.getEventType(),

@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
 # ---- Build stage ----
-FROM eclipse-temurin:21-jdk-jammy AS build
+# Maven base image (no committed wrapper required). Switch to ./mvnw after `mvn -N wrapper:wrapper`.
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN ./mvnw -B -q dependency:go-offline
+COPY pom.xml ./
+RUN mvn -B -q dependency:go-offline
 COPY src ./src
-RUN ./mvnw -B -DskipTests clean package \
+RUN mvn -B -DskipTests clean package \
     && cp target/*.jar app.jar \
     && java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
