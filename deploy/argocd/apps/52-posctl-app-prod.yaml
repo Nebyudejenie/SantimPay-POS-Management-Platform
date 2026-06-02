@@ -1,0 +1,19 @@
+# Production deployment. NOTE: automated sync is intentionally DISABLED — prod promotion is a manual,
+# reviewed ArgoCD sync (or a tag bump approved via the GitHub prod environment gate). selfHeal stays
+# on so drift is corrected, but new versions never roll out without a human action.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-app-prod
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "5" }
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/santimpay/posctl-platform.git
+    targetRevision: main
+    path: deploy/overlays/prod
+  destination: { server: https://kubernetes.default.svc, namespace: app-prod }
+  syncPolicy:
+    # No `automated:` block -> manual sync only. Argo Rollouts (canary) gates the actual rollout.
+    syncOptions: [CreateNamespace=true]

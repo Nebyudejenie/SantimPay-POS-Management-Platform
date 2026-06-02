@@ -1,0 +1,51 @@
+# Redis (cache + Streams for the outbox relay) and MinIO (S3 object store for attachments + backups).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-redis
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "1" }
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    targetRevision: 20.x
+    helm:
+      releaseName: redis
+      values: |
+        architecture: replication
+        auth: { existingSecret: posctl-redis-auth, existingSecretPasswordKey: password }
+        master: { persistence: { storageClass: ceph-block, size: 8Gi } }
+        replica: { replicaCount: 2, persistence: { storageClass: ceph-block, size: 8Gi } }
+        metrics: { enabled: true }
+  destination: { server: https://kubernetes.default.svc, namespace: data }
+  syncPolicy: { automated: { prune: true, selfHeal: true }, syncOptions: [CreateNamespace=true] }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-minio
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "1" }
+spec:
+  project: default
+  source:
+    repoURL: https://charts.min.io/
+    chart: minio
+    targetRevision: 5.x
+    helm:
+      releaseName: minio
+      values: |
+        mode: distributed
+        replicas: 4
+        persistence: { storageClass: ceph-block, size: 100Gi }
+        existingSecret: posctl-minio-auth
+        buckets:
+          - { name: posctl-attachments, policy: none }
+          - { name: posctl-kyc-evidence, policy: none, objectlock: true }
+          - { name: posctl-pg-backups, policy: none }
+          - { name: posctl-tfstate, policy: none }
+        metrics: { serviceMonitor: { enabled: true } }
+  destination: { server: https://kubernetes.default.svc, namespace: data }
+  syncPolicy: { automated: { prune: true, selfHeal: true } }

@@ -1,0 +1,66 @@
+# Identity (Keycloak), secrets (Vault + External Secrets Operator), registry scanning is via Harbor
+# (run as its own app in prod). These live in the `platform` namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://helm.releases.hashicorp.com
+    chart: vault
+    targetRevision: 0.28.x
+    helm:
+      releaseName: vault
+      values: |
+        server:
+          ha: { enabled: true, raft: { enabled: true } }
+          dataStorage: { storageClass: ceph-block, size: 10Gi }
+        injector: { enabled: false }   # we use External Secrets Operator instead
+  destination: { server: https://kubernetes.default.svc, namespace: platform }
+  syncPolicy: { automated: { prune: true, selfHeal: true }, syncOptions: [CreateNamespace=true] }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-secrets
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://charts.external-secrets.io
+    chart: external-secrets
+    targetRevision: 0.10.x
+    helm: { releaseName: external-secrets }
+  destination: { server: https://kubernetes.default.svc, namespace: platform }
+  syncPolicy: { automated: { prune: true, selfHeal: true } }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: keycloak
+    targetRevision: 22.x
+    helm:
+      releaseName: keycloak
+      values: |
+        auth: { existingSecret: posctl-keycloak-admin }
+        production: true
+        proxy: edge                # behind Cloudflare Tunnel + internal ingress
+        externalDatabase:
+          host: posctl-pg-rw.data.svc
+          database: keycloak
+          existingSecret: posctl-keycloak-db
+        postgresql: { enabled: false }
+        metrics: { enabled: true }
+  destination: { server: https://kubernetes.default.svc, namespace: platform }
+  syncPolicy: { automated: { prune: true, selfHeal: true } }

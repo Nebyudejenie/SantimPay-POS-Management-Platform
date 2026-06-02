@@ -1,0 +1,22 @@
+# Root ArgoCD Application — the single thing applied by hand once. It then syncs everything else
+# (platform add-ons + the posctl app) from Git. True GitOps: CI never runs kubectl apply.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-root
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/santimpay/posctl-platform.git
+    targetRevision: main
+    path: deploy/argocd/apps
+    directory:
+      recurse: true        # pick up every Application manifest in apps/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

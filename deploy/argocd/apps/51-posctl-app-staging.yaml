@@ -1,0 +1,18 @@
+# Staging deployment of the posctl app. Auto-synced like dev. Promotion dev->staging is just CI
+# bumping the staging image tag in the overlay (GitOps).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-app-staging
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "5" }
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/santimpay/posctl-platform.git
+    targetRevision: main
+    path: deploy/overlays/staging
+  destination: { server: https://kubernetes.default.svc, namespace: app-staging }
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ApplyOutOfSyncOnly=true]

@@ -1,0 +1,36 @@
+---
+# Installs ArgoCD on the cluster and applies the app-of-apps. This is the ONLY thing applied
+# imperatively — everything else (platform + app) is then reconciled from Git by ArgoCD.
+- name: Ensure kube tools available (kubectl via rke2)
+  ansible.builtin.set_fact:
+    kubeconfig: /etc/rancher/rke2/rke2.yaml
+    kubectl: /var/lib/rancher/rke2/bin/kubectl
+
+- name: Create argocd namespace
+  ansible.builtin.command: >
+    {{ kubectl }} --kubeconfig {{ kubeconfig }} create namespace {{ argocd_namespace }}
+    --dry-run=client -o yaml
+  register: ns_yaml
+  changed_when: false
+
+- name: Apply argocd namespace
+  ansible.builtin.shell: "echo '{{ ns_yaml.stdout }}' | {{ kubectl }} --kubeconfig {{ kubeconfig }} apply -f -"
+
+- name: Install ArgoCD
+  ansible.builtin.command: >
+    {{ kubectl }} --kubeconfig {{ kubeconfig }} -n {{ argocd_namespace }} apply -f
+    https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/install.yaml
+  register: argocd_install
+  changed_when: "'created' in argocd_install.stdout"
+
+- name: Wait for ArgoCD server rollout
+  ansible.builtin.command: >
+    {{ kubectl }} --kubeconfig {{ kubeconfig }} -n {{ argocd_namespace }}
+    rollout status deploy/argocd-server --timeout=300s
+  changed_when: false
+
+- name: Apply app-of-apps (hands control to GitOps)
+  ansible.builtin.command: >
+    {{ kubectl }} --kubeconfig {{ kubeconfig }} apply -f
+    {{ playbook_dir }}/../../deploy/argocd/app-of-apps.yaml
+  changed_when: true

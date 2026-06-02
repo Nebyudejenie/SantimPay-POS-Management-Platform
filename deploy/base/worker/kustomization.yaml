@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - networkpolicy.yaml
+# Shares posctl-api-secrets + posctl-api-config (defined in the api base) and the posctl-api SA.
+# No Service: the worker serves no traffic, only actuator probes/metrics on the pod.

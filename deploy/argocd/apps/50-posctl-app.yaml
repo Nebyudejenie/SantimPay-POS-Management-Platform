@@ -1,0 +1,18 @@
+# The posctl application itself (api/web/worker). Kept last so its dependencies (DB, Redis, Keycloak,
+# ingress) are reconciled first. Points at the dev overlay; staging/prod are separate Applications.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-app-dev
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "5" }
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/santimpay/posctl-platform.git
+    targetRevision: main
+    path: deploy/overlays/dev
+  destination: { server: https://kubernetes.default.svc, namespace: app }
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ApplyOutOfSyncOnly=true]

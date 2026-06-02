@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app
+resources:
+  - ../../base
+
+images:
+  - { name: harbor.santimpay.local/posctl/api, newTag: staging-latest }
+  - { name: harbor.santimpay.local/posctl/web, newTag: staging-latest }
+
+replicas:
+  - { name: posctl-api, count: 2 }
+  - { name: posctl-web, count: 2 }
+
+configMapGenerator:
+  - name: posctl-api-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=staging
+
+patches:
+  - target: { kind: Ingress, name: posctl }
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.posctl.santimpay.com

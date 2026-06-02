@@ -1,0 +1,36 @@
+# PostgreSQL via CloudNativePG operator (ADR-013). Two Applications: the operator, then the cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg-operator
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "1" }
+spec:
+  project: default
+  source:
+    repoURL: https://cloudnative-pg.github.io/charts
+    chart: cloudnative-pg
+    targetRevision: 0.22.x
+    helm:
+      releaseName: cnpg
+  destination: { server: https://kubernetes.default.svc, namespace: data }
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]
+---
+# The Postgres cluster itself (3 instances, HA, WAL archiving to MinIO for PITR).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: posctl-postgres
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "1" }
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/santimpay/posctl-platform.git
+    targetRevision: main
+    path: deploy/platform/postgres
+  destination: { server: https://kubernetes.default.svc, namespace: data }
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

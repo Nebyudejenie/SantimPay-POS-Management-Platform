@@ -1,0 +1,52 @@
+# Local developer dependencies ONLY (prod runs on Kubernetes via ArgoCD).
+# Brings up Postgres+pgvector, Redis, MinIO, Keycloak for fast inner-loop dev.
+name: posctl-dev
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: posctl
+      POSTGRES_PASSWORD: posctl
+      POSTGRES_DB: posctl
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U posctl"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes:
+      - redisdata:/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: posctl
+      MINIO_ROOT_PASSWORD: posctlsecret
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - miniodata:/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports: ["8081:8080"]
+    volumes:
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm.json:ro
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:

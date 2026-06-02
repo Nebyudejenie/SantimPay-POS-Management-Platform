@@ -1,0 +1,21 @@
+# Default
+*                       @santimpay/platform
+
+# Backend modules
+/apps/api/              @santimpay/backend
+/apps/api/src/main/java/com/santimpay/posctl/shared/  @santimpay/platform @santimpay/security
+
+# Frontend / mobile
+/apps/web/              @santimpay/frontend
+/apps/field_app/        @santimpay/mobile
+
+# Contracts require dual review (producer + consumers)
+/packages/contracts/    @santimpay/backend @santimpay/frontend @santimpay/mobile
+
+# Infra & GitOps
+/infra/                 @santimpay/platform
+/deploy/                @santimpay/platform
+/.github/               @santimpay/platform
+
+# Data
+/db/                    @santimpay/backend @santimpay/data-ai

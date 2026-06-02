@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app
+resources:
+  - ../../base
+
+# CI bumps these tags to the built git sha (build-release.yml -> commits the new tag here).
+images:
+  - { name: harbor.santimpay.local/posctl/api, newTag: dev-latest }
+  - { name: harbor.santimpay.local/posctl/web, newTag: dev-latest }
+
+replicas:
+  - { name: posctl-api, count: 1 }
+  - { name: posctl-web, count: 1 }
+
+configMapGenerator:
+  - name: posctl-api-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=dev
+
+# Dev host (Cloudflare routes dev.posctl.* to the internal ingress).
+patches:
+  - target: { kind: Ingress, name: posctl }
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.posctl.santimpay.com

@@ -1,0 +1,20 @@
+name: security
+on:
+  schedule: [{ cron: "0 3 * * *" }]   # nightly
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem (deps, secrets, misconfig)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} }

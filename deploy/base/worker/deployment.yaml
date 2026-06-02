@@ -1,0 +1,53 @@
+# Worker = the same posctl image as the API, but with POSCTL_WORKER_ENABLED=true so the scheduled
+# beans (outbox relay, materialized-view refresh, future AI batch) run here — exactly one logical
+# runner — while the API Deployment stays request-serving only. Single replica by default; the work
+# is light and the relay is a serial poller. Scale deliberately, not via HPA.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posctl-worker
+  labels: { app.kubernetes.io/name: posctl-worker, app.kubernetes.io/part-of: posctl }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }   # single-runner semantics; don't overlap old+new during deploy
+  selector:
+    matchLabels: { app.kubernetes.io/name: posctl-worker }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: posctl-worker }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+    spec:
+      serviceAccountName: posctl-api
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: worker
+          image: harbor.santimpay.local/posctl/api:latest # SAME image as api; overlay/CI sets tag
+          ports: [{ containerPort: 8080, name: http }]
+          env:
+            - { name: POSCTL_WORKER_ENABLED, value: "true" }
+          envFrom:
+            - secretRef: { name: posctl-api-secrets }
+            - configMapRef: { name: posctl-api-config }
+          resources:
+            requests: { cpu: "100m", memory: "640Mi" }
+            limits: { cpu: "500m", memory: "1Gi" }
+          startupProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }

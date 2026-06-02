@@ -1,0 +1,49 @@
+---
+# CIS-aligned baseline hardening for Ubuntu 24.04 fintech nodes. Idempotent.
+- name: Ensure unattended security upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+    update_cache: true
+
+- name: Harden SSH (no root login, key-only auth)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.re }}"
+    line: "{{ item.line }}"
+    validate: "sshd -t -f %s"
+  loop:
+    - { re: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+    - { re: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { re: '^#?X11Forwarding', line: 'X11Forwarding no' }
+  notify: restart sshd
+
+- name: Kernel hardening sysctls
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  loop:
+    - { name: net.ipv4.conf.all.rp_filter, value: "1" }
+    - { name: net.ipv4.tcp_syncookies, value: "1" }
+    - { name: kernel.randomize_va_space, value: "2" }
+    - { name: net.ipv4.conf.all.accept_redirects, value: "0" }
+
+- name: Enable auditd
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+
+- name: Ensure auditd running
+  ansible.builtin.service:
+    name: auditd
+    state: started
+    enabled: true
+
+# No inbound ports are opened: ingress is via the outbound-only Cloudflare Tunnel (docs/07).
+- name: Default-deny inbound firewall (allow established + intra-cluster only)
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

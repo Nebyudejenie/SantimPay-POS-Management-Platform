@@ -1,0 +1,53 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: [self-hosted, linux]   # ARC ephemeral runners in-cluster
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_USER: posctl, POSTGRES_PASSWORD: posctl, POSTGRES_DB: posctl }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U posctl" --health-interval 5s
+          --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - name: Build + test (incl. Spring Modulith verify)
+        working-directory: apps/api
+        run: ./mvnw -B verify
+      - name: Upload module docs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: modulith-docs, path: apps/api/target/spring-modulith-docs/** }
+
+  frontend:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web build
+      - run: pnpm --filter web test
+
+  contracts:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint OpenAPI contract
+        run: npx --yes @redocly/cli lint packages/contracts/openapi.yaml
+      # Parity (runtime /v3/api-docs vs curated openapi.yaml) is enforced by ContractParityTest in
+      # the `backend` job's `mvn verify` (shares the Testcontainers stack rather than a 2nd boot).

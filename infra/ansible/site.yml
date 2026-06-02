@@ -1,0 +1,27 @@
+---
+# Configures the Terraform-provisioned Ubuntu 24.04 VMs: CIS hardening, prerequisites, then RKE2.
+# Ansible OWNS OS config; Terraform owns infra; ArgoCD owns app workloads. No overlap.
+- name: Harden and prepare all nodes
+  hosts: all
+  become: true
+  roles:
+    - role: hardening        # CIS baseline: ssh, sysctl, auditd, firewall (egress-only), updates
+    - role: node_prep        # kernel modules, disable swap, container runtime prereqs
+
+- name: Install RKE2 servers (HA control plane)
+  hosts: k8s_servers
+  become: true
+  roles:
+    - role: rke2_server      # first node inits cluster; others join with token
+
+- name: Install RKE2 agents (workers)
+  hosts: k8s_workers
+  become: true
+  roles:
+    - role: rke2_agent
+
+- name: Bootstrap GitOps
+  hosts: k8s_servers[0]
+  become: true
+  roles:
+    - role: argocd_bootstrap # installs ArgoCD + applies deploy/argocd/app-of-apps.yaml

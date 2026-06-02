@@ -1,0 +1,32 @@
+# cloudflared runs the Cloudflare Tunnel: an OUTBOUND-only connection to Cloudflare's edge that
+# proxies public traffic to the internal ingress-nginx. No inbound ports, no public IP on the DC.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: app
+  labels: { app.kubernetes.io/name: cloudflared }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app.kubernetes.io/name: cloudflared } }
+  template:
+    metadata: { labels: { app.kubernetes.io/name: cloudflared } }
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2024.8.3
+          args: ["tunnel", "--no-autoupdate", "run", "--token-file", "/etc/cf/token"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "200m", memory: "128Mi" }
+          volumeMounts:
+            - { name: cf-token, mountPath: /etc/cf, readOnly: true }
+      volumes:
+        # Synced by External Secrets from Vault (the tunnel token Terraform created).
+        - name: cf-token
+          secret: { secretName: cloudflared-token }

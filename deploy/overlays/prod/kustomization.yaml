@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app
+resources:
+  - ../../base
+  - rollout-api.yaml          # canary Rollout + canary Service + analysis gate (prod only)
+
+# Prod pins an explicit released tag (a semver/sha), NOT a moving "latest" — promotion is a
+# deliberate git change to this value, reviewed + approved (GitHub prod environment gate).
+images:
+  - { name: harbor.santimpay.local/posctl/api, newTag: v1.0.0 }
+  - { name: harbor.santimpay.local/posctl/web, newTag: v1.0.0 }
+
+replicas:
+  - { name: posctl-api, count: 3 }
+  - { name: posctl-web, count: 3 }
+
+configMapGenerator:
+  - name: posctl-api-config
+    behavior: merge
+    literals:
+      - SPRING_PROFILES_ACTIVE=prod
+
+patches:
+  # The Rollout drives the api pods now, so scale the base Deployment to 0 (its pod template is still
+  # referenced by the Rollout via workloadRef — Recreate-free, one source of truth).
+  - target: { kind: Deployment, name: posctl-api }
+    patch: |
+      - { op: replace, path: /spec/replicas, value: 0 }
+  # HPA must target the Rollout, not the Deployment, in prod.
+  - target: { kind: HorizontalPodAutoscaler, name: posctl-api }
+    patch: |
+      - { op: replace, path: /spec/minReplicas, value: 3 }
+      - { op: replace, path: /spec/maxReplicas, value: 12 }
+      - { op: replace, path: /spec/scaleTargetRef/apiVersion, value: argoproj.io/v1alpha1 }
+      - { op: replace, path: /spec/scaleTargetRef/kind, value: Rollout }
+  - target: { kind: Ingress, name: posctl }
+    patch: |
+      - op: replace
+        path: /spec/rules/0/host
+        value: app.posctl.santimpay.com

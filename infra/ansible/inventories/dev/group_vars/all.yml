@@ -1,0 +1,19 @@
+---
+# Shared variables for the dev cluster. Secrets come from Vault / ansible-vault, never plaintext here.
+rke2_version: "v1.30.5+rke2r1"
+rke2_channel: stable
+
+# First server node initialises the cluster; the rest join it.
+rke2_server_init_host: posctl-dev-cp-1
+rke2_token: "{{ vault_rke2_token }}"        # define in an ansible-vault file, not here
+
+# CNI: Cilium (eBPF). RKE2 ships it as a managed chart via HelmChartConfig.
+rke2_cni: cilium
+
+# Cluster VIP the agents/kubeconfig point at (kube-vip or LB in front of the 3 servers).
+rke2_api_vip: "10.10.0.10"
+
+argocd_version: "v2.12.3"
+argocd_namespace: argocd
+gitops_repo: "https://github.com/santimpay/posctl-platform.git"
+gitops_target_revision: main

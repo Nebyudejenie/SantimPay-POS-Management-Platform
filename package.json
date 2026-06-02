@@ -1,0 +1,20 @@
+{
+  "name": "posctl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SantimPay POS Management Platform — monorepo",
+  "packageManager": "pnpm@9.7.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "contracts:gen": "turbo run contracts:gen"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}

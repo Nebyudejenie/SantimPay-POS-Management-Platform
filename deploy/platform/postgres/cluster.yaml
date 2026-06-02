@@ -1,0 +1,54 @@
+# CloudNativePG cluster for posctl. 3 instances (1 primary + 2 replicas), continuous WAL archiving
+# + base backups to MinIO for PITR (docs/07 §13-14). App connects via the -rw / -ro services.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: posctl-pg
+  namespace: data
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  primaryUpdateStrategy: unsupervised
+
+  storage:
+    size: 50Gi
+    storageClass: ceph-block
+
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "512MB"
+      work_mem: "16MB"
+    shared_preload_libraries:
+      - pg_stat_statements
+
+  bootstrap:
+    initdb:
+      database: posctl
+      owner: posctl
+      secret: { name: posctl-pg-app }   # synced by External Secrets from Vault
+
+  # Continuous backup to MinIO (S3) — base backups + WAL for point-in-time recovery.
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://posctl-pg-backups/
+      endpointURL: http://minio.data.svc:9000
+      s3Credentials:
+        accessKeyId: { name: posctl-pg-backup-s3, key: ACCESS_KEY_ID }
+        secretAccessKey: { name: posctl-pg-backup-s3, key: SECRET_ACCESS_KEY }
+      wal: { compression: gzip }
+    retentionPolicy: "35d"
+
+  monitoring:
+    enablePodMonitor: true
+---
+# Daily base backup schedule (WAL gives continuous; this anchors PITR windows).
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: posctl-pg-daily
+  namespace: data
+spec:
+  schedule: "0 2 * * *"
+  backupOwnerReference: self
+  cluster: { name: posctl-pg }

@@ -1,0 +1,16 @@
+{
+  "name": "@posctl/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI 3.1 contract (source of truth) + generated TS/Dart client generation.",
+  "scripts": {
+    "lint": "redocly lint openapi.yaml",
+    "gen:ts": "openapi-generator-cli generate -g typescript-axios -i openapi.yaml -o ../../apps/web/src/generated/api",
+    "gen:dart": "openapi-generator-cli generate -g dart-dio -i openapi.yaml -o ../../apps/field_app/lib/generated/api",
+    "contracts:gen": "pnpm gen:ts && pnpm gen:dart"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.13.0",
+    "@redocly/cli": "^1.25.0"
+  }
+}

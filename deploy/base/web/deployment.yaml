@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posctl-web
+  labels: { app.kubernetes.io/name: posctl-web, app.kubernetes.io/part-of: posctl }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app.kubernetes.io/name: posctl-web }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: posctl-web }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: web
+          image: harbor.santimpay.local/posctl/web:latest # overwritten by overlay/CI
+          ports: [{ containerPort: 8080, name: http }]
+          # The SPA is static; runtime config is injected via a small env-config endpoint or
+          # build-time VITE_* vars baked per-environment in CI. nginx serves on 8080 (non-root image).
+          resources:
+            requests: { cpu: "25m", memory: "64Mi" }
+            limits: { cpu: "200m", memory: "128Mi" }
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: nginx-cache, mountPath: /var/cache/nginx }
+            - { name: nginx-run, mountPath: /var/run }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: nginx-cache, emptyDir: {} }
+        - { name: nginx-run, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app.kubernetes.io/name: posctl-web }

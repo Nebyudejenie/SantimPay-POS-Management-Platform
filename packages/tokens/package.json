@@ -1,0 +1,10 @@
+{
+  "name": "@posctl/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared design tokens for web (MUI) and Flutter themes.",
+  "main": "tokens.json",
+  "scripts": {
+    "build": "node -e \"console.log('tokens are static json; transformers added when needed')\""
+  }
+}

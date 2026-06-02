@@ -1,0 +1,65 @@
+# Prod-only: replace the api Deployment with an Argo Rollouts canary. CI bumps the image tag (a
+# reviewed git change); ArgoCD syncs; Rollouts then shifts traffic 10%->25%->50%->100% with an
+# automated analysis gate between steps. A failing gate auto-aborts and rolls back to stable.
+#
+# Applied via a kustomize patch that swaps kind Deployment -> Rollout for posctl-api in prod only.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: posctl-api
+  labels: { app.kubernetes.io/name: posctl-api, app.kubernetes.io/part-of: posctl }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app.kubernetes.io/name: posctl-api }
+  workloadRef:                       # reuse the Deployment's pod template (DRY; one source of truth)
+    apiVersion: apps/v1
+    kind: Deployment
+    name: posctl-api
+    scaleDown: never
+  strategy:
+    canary:
+      stableService: posctl-api
+      canaryService: posctl-api-canary
+      steps:
+        - setWeight: 10
+        - pause: { duration: 2m }
+        - analysis:
+            templates: [{ templateName: posctl-api-success-rate }]
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - analysis:
+            templates: [{ templateName: posctl-api-success-rate }]
+        - setWeight: 50
+        - pause: { duration: 5m }
+        - setWeight: 100
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: posctl-api-canary
+  labels: { app.kubernetes.io/name: posctl-api }
+spec:
+  selector: { app.kubernetes.io/name: posctl-api }
+  ports: [{ name: http, port: 80, targetPort: http }]
+---
+# Gate: require >99% non-5xx success on the canary over a 2-min window, queried from Prometheus.
+# If it drops, the analysis run fails and Rollouts aborts the promotion automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: posctl-api-success-rate
+spec:
+  metrics:
+    - name: success-rate
+      interval: 1m
+      count: 2
+      successCondition: result[0] >= 0.99
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://kps-kube-prometheus-stack-prometheus.observability:9090
+          query: |
+            sum(rate(http_server_requests_seconds_count{app="posctl-api",status!~"5.."}[2m]))
+            /
+            sum(rate(http_server_requests_seconds_count{app="posctl-api"}[2m]))

@@ -1,0 +1,46 @@
+---
+# Installs the RKE2 server (control plane). The first node bootstraps the cluster; the others join
+# it via the shared token. Cilium is configured as the CNI via HelmChartConfig.
+- name: Set RKE2 install type fact
+  ansible.builtin.set_fact:
+    is_init_node: "{{ inventory_hostname == rke2_server_init_host }}"
+
+- name: Create RKE2 config dir
+  ansible.builtin.file:
+    path: /etc/rancher/rke2
+    state: directory
+    mode: "0755"
+
+- name: Write RKE2 server config
+  ansible.builtin.copy:
+    dest: /etc/rancher/rke2/config.yaml
+    mode: "0600"
+    content: |
+      token: {{ rke2_token }}
+      tls-san:
+        - {{ rke2_api_vip }}
+      cni: {{ rke2_cni }}
+      {% if not is_init_node %}
+      server: https://{{ rke2_api_vip }}:9345
+      {% endif %}
+      disable:
+        - rke2-ingress-nginx   # we run our own internal ingress-nginx via GitOps
+      write-kubeconfig-mode: "0640"
+
+- name: Install RKE2 server
+  ansible.builtin.shell: |
+    curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL={{ rke2_channel }} \
+      INSTALL_RKE2_VERSION={{ rke2_version }} INSTALL_RKE2_TYPE=server sh -
+  args:
+    creates: /usr/local/bin/rke2
+
+- name: Enable + start rke2-server
+  ansible.builtin.service:
+    name: rke2-server
+    state: started
+    enabled: true
+
+- name: Wait for kubeconfig
+  ansible.builtin.wait_for:
+    path: /etc/rancher/rke2/rke2.yaml
+    timeout: 300

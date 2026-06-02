@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: posctl-api
+  threads:
+    virtual:
+      enabled: true            # Java 21 virtual threads for IO-bound request handling
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/posctl}
+    username: ${POSTGRES_USER:posctl}
+    password: ${POSTGRES_PASSWORD:posctl}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    open-in-view: false        # never; lazy loading at the web layer is a bug, not a feature
+    hibernate:
+      ddl-auto: validate       # schema is owned by Flyway, never Hibernate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        default_schema: public
+  flyway:
+    enabled: true
+    schemas: public,shared,identity,merchant,inventory,deployment,kyc,tasks,workflow,followup,analytics,health,notification,ai,audit
+    default-schema: public
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/posctl}
+  # Spring Modulith event publication registry: persist @ApplicationModuleListener events and
+  # re-publish any incomplete at shutdown, so a failed/missed async handler is retried on restart.
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: false       # schema is owned by Flyway, not auto-created
+      republish-outstanding-events-on-restart: true
+
+posctl:
+  outbox:
+    relay-interval-ms: 1000
+  # Scheduled/background work (outbox relay, MV refresh, AI batch) runs ONLY in the worker
+  # Deployment. API pods set this false (default) so they serve requests and never duplicate polls.
+  worker:
+    enabled: ${POSCTL_WORKER_ENABLED:false}
+  ai:
+    scoring-cron: "0 30 2 * * *"   # nightly merchant health+risk scoring (worker only)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true          # /actuator/health/liveness & /readiness for k8s
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: posctl-api
+  tracing:
+    sampling:
+      probability: ${TRACE_SAMPLE:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://tempo.observability:4318/v1/traces}
+
+server:
+  port: 8080
+  forward-headers-strategy: framework   # behind Cloudflare Tunnel + ingress
+
+logging:
+  level:
+    com.santimpay.posctl: INFO

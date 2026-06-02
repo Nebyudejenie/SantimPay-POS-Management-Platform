@@ -1,0 +1,51 @@
+name: posctl_field
+description: SantimPay field agent app — offline-first POS deployment & device ops.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  # Navigation
+  go_router: ^14.2.0
+  # Network
+  dio: ^5.6.0
+  retrofit: ^4.2.0
+  uuid: ^4.5.0
+  # Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  # Offline storage
+  drift: ^2.19.0
+  sqlite3_flutter_libs: ^0.5.24
+  path_provider: ^2.1.4
+  path: ^1.9.0                 # join() for the sqlite db path
+  # Auth & secure storage
+  flutter_appauth: ^7.0.1
+  flutter_secure_storage: ^9.2.2
+  # Device capabilities
+  mobile_scanner: ^5.2.3      # serial / IMEI scanning
+  geolocator: ^13.0.1         # GPS verification at branch
+  image_picker: ^1.1.2        # deployment & shop photos
+  signature: ^5.5.0           # receiver signature capture
+  connectivity_plus: ^6.0.5   # online/offline detection for sync
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.12
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  retrofit_generator: ^9.1.2
+  drift_dev: ^2.19.0
+  riverpod_generator: ^2.4.3
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

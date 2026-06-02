@@ -1,0 +1,6 @@
+target/
+!target/*.jar
+.git
+.idea
+*.iml
+src/test

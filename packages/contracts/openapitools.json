@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.8.0",
+    "generators": {
+      "ts-axios": {
+        "generatorName": "typescript-axios",
+        "inputSpec": "openapi.yaml",
+        "output": "../../apps/web/src/generated/api",
+        "additionalProperties": {
+          "withSeparateModelsAndApi": true,
+          "apiPackage": "apis",
+          "modelPackage": "models",
+          "supportsES6": true,
+          "useSingleRequestParameter": true
+        }
+      },
+      "dart-dio": {
+        "generatorName": "dart-dio",
+        "inputSpec": "openapi.yaml",
+        "output": "../../apps/field_app/lib/generated/api",
+        "additionalProperties": {
+          "pubName": "posctl_api",
+          "nullableFields": true
+        }
+      }
+    }
+  }
+}

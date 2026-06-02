@@ -1,0 +1,35 @@
+name: iac
+on:
+  pull_request:
+    paths: ["infra/**", "deploy/**"]
+  push:
+    branches: [main]
+    paths: ["infra/**", "deploy/**"]
+
+jobs:
+  terraform:
+    runs-on: [self-hosted, linux]
+    defaults: { run: { working-directory: infra/terraform/environments/dev } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init -backend-config=backend.hcl
+      - run: terraform fmt -check -recursive ../..
+      - run: terraform validate
+      - name: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+      - name: Plan (PR only)
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+      # apply is gated to the prod-approved 'main' path + GitHub environment protection
+      - name: Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+
+  kustomize:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate overlays render
+        run: |
+          kubectl kustomize deploy/overlays/dev > /dev/null

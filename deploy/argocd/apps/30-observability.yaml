@@ -1,0 +1,65 @@
+# Grafana stack: kube-prometheus-stack (Prometheus + Grafana + Alertmanager) + Loki + Tempo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 62.x
+    helm:
+      releaseName: kps
+      values: |
+        grafana:
+          adminPassword: ""              # set via existingSecret in prod
+          serviceMonitor: { enabled: true }
+        prometheus:
+          prometheusSpec:
+            retention: 15d
+            serviceMonitorSelectorNilUsesHelmValues: false
+            storageSpec:
+              volumeClaimTemplate:
+                spec: { storageClassName: ceph-block, resources: { requests: { storage: 50Gi } } }
+  destination: { server: https://kubernetes.default.svc, namespace: observability }
+  syncPolicy: { automated: { prune: true, selfHeal: true }, syncOptions: [CreateNamespace=true, ServerSideApply=true] }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 6.x
+    helm:
+      releaseName: loki
+      values: |
+        deploymentMode: SingleBinary
+        loki: { storage: { type: filesystem }, commonConfig: { replication_factor: 1 } }
+        singleBinary: { persistence: { storageClass: ceph-block, size: 50Gi } }
+  destination: { server: https://kubernetes.default.svc, namespace: observability }
+  syncPolicy: { automated: { prune: true, selfHeal: true } }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tempo
+  namespace: argocd
+  annotations: { argocd.argoproj.io/sync-wave: "2" }
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: tempo
+    targetRevision: 1.x
+    helm: { releaseName: tempo }
+  destination: { server: https://kubernetes.default.svc, namespace: observability }
+  syncPolicy: { automated: { prune: true, selfHeal: true } }

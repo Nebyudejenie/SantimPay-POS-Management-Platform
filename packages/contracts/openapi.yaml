@@ -1,0 +1,773 @@
+openapi: 3.1.0
+info:
+  title: posctl API
+  version: 1.0.0
+  description: |
+    Source-of-truth contract for the SantimPay POS Management Platform. The Spring Boot backend
+    publishes a runtime spec at /v3/api-docs; THIS file is the hand-curated contract used to generate
+    the TypeScript (web) and Dart (field app) clients. A CI contract test reconciles the two.
+
+    Covers all 12 modules. Action endpoints use the `{id}:verb` style (e.g. /merchants/{id}:activate)
+    matching the controllers. All endpoints require a Keycloak bearer token; fine-grained
+    authorization is enforced server-side against the `permissions` claim.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+
+paths:
+  # ---------------- Identity ----------------
+  /me:
+    get:
+      operationId: getMe
+      tags: [Identity]
+      responses:
+        '200': { description: current principal, content: { application/json: { schema: { $ref: '#/components/schemas/Me' } } } }
+  /users:
+    get:
+      operationId: listUsers
+      tags: [Identity]
+      parameters:
+        - { $ref: '#/components/parameters/Q' }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of users, content: { application/json: { schema: { $ref: '#/components/schemas/UserPage' } } } } }
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [Identity]
+      parameters:
+        - { in: query, name: region, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of employees, content: { application/json: { schema: { $ref: '#/components/schemas/EmployeePage' } } } } }
+
+  # ---------------- Merchants ----------------
+  /merchants:
+    get:
+      operationId: listMerchants
+      tags: [Merchants]
+      parameters:
+        - { $ref: '#/components/parameters/Q' }
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/MerchantStatus' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of merchants, content: { application/json: { schema: { $ref: '#/components/schemas/MerchantPage' } } } } }
+    post:
+      operationId: onboardMerchant
+      tags: [Merchants]
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/OnboardMerchantRequest' } } }
+      responses:
+        '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+  /merchants/{id}:
+    get:
+      operationId: getMerchant
+      tags: [Merchants]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: merchant, content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /merchants/{id}:activate:
+    post:
+      operationId: activateMerchant
+      tags: [Merchants]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: activated, content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+  /merchants/{id}:suspend:
+    post:
+      operationId: suspendMerchant
+      tags: [Merchants]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { reason: { type: string } }, required: [reason] } } }
+      responses: { '200': { description: suspended, content: { application/json: { schema: { $ref: '#/components/schemas/Merchant' } } } } }
+
+  # ---------------- Devices ----------------
+  /devices:
+    get:
+      operationId: listDevices
+      tags: [Devices]
+      parameters:
+        - { $ref: '#/components/parameters/Q' }
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/DeviceStatus' } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of devices, content: { application/json: { schema: { $ref: '#/components/schemas/DevicePage' } } } } }
+    post:
+      operationId: receiveDevice
+      tags: [Devices]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReceiveDeviceRequest' } } }
+      responses:
+        '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/Device' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+  /devices/{id}:
+    get:
+      operationId: getDevice
+      tags: [Devices]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: device, content: { application/json: { schema: { $ref: '#/components/schemas/Device' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /devices/{id}:mark-faulty:
+    post:
+      operationId: markDeviceFaulty
+      tags: [Devices]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { reason: { type: string } }, required: [reason] } } }
+      responses:
+        '200': { description: updated, content: { application/json: { schema: { $ref: '#/components/schemas/Device' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+  /devices/{id}:retire:
+    post:
+      operationId: retireDevice
+      tags: [Devices]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: retired, content: { application/json: { schema: { $ref: '#/components/schemas/Device' } } } } }
+
+  # ---------------- Deployments ----------------
+  /deployments:
+    get:
+      operationId: listDeployments
+      tags: [Deployments]
+      parameters:
+        - { in: query, name: date, schema: { type: string, format: date } }
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/DeploymentStatus' } }
+        - { in: query, name: agent, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of deployments, content: { application/json: { schema: { $ref: '#/components/schemas/DeploymentPage' } } } } }
+    post:
+      operationId: planDeployment
+      tags: [Deployments]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PlanDeploymentRequest' } } }
+      responses: { '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/Deployment' } } } } }
+  /deployments/{id}:
+    get:
+      operationId: getDeployment
+      tags: [Deployments]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: deployment, content: { application/json: { schema: { $ref: '#/components/schemas/Deployment' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /deployments/{id}:complete:
+    post:
+      operationId: completeDeployment
+      tags: [Deployments]
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CompleteDeploymentRequest' } } }
+      responses:
+        '200': { description: completed, content: { application/json: { schema: { $ref: '#/components/schemas/Deployment' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+
+  # ---------------- KYC ----------------
+  /kyc-requests:
+    get:
+      operationId: listKycRequests
+      tags: [KYC]
+      parameters:
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/KycStatus' } }
+        - { in: query, name: merchantId, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of kyc requests, content: { application/json: { schema: { $ref: '#/components/schemas/KycPage' } } } } }
+  /kyc-requests/{id}:
+    get:
+      operationId: getKycRequest
+      tags: [KYC]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: kyc request, content: { application/json: { schema: { $ref: '#/components/schemas/KycRequest' } } } } }
+  /kyc-requests/{id}:assign:
+    post:
+      operationId: assignKycRequest
+      tags: [KYC]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: assigned, content: { application/json: { schema: { $ref: '#/components/schemas/KycRequest' } } } } }
+  /kyc-requests/{id}:approve:
+    post:
+      operationId: approveKycRequest
+      tags: [KYC]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: approved (initiates activation workflow), content: { application/json: { schema: { $ref: '#/components/schemas/KycRequest' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+  /kyc-requests/{id}:reject:
+    post:
+      operationId: rejectKycRequest
+      tags: [KYC]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { reason: { type: string } }, required: [reason] } } }
+      responses: { '200': { description: rejected, content: { application/json: { schema: { $ref: '#/components/schemas/KycRequest' } } } } }
+
+  # ---------------- Workflows ----------------
+  /workflows:
+    get:
+      operationId: listWorkflows
+      tags: [Workflows]
+      parameters:
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/WorkflowStatus' } }
+        - { in: query, name: subjectType, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of workflows, content: { application/json: { schema: { $ref: '#/components/schemas/WorkflowPage' } } } } }
+  /workflows/{id}:
+    get:
+      operationId: getWorkflow
+      tags: [Workflows]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: workflow, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } } }
+  /workflows/{id}:approve:
+    post:
+      operationId: approveWorkflow
+      tags: [Workflows]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { comment: { type: string } } } } }
+      responses:
+        '200': { description: approved, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+  /workflows/{id}:reject:
+    post:
+      operationId: rejectWorkflow
+      tags: [Workflows]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { comment: { type: string } } } } }
+      responses: { '200': { description: rejected, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } } }
+
+  # ---------------- Tasks ----------------
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [Tasks]
+      parameters:
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/TaskStatus' } }
+        - { in: query, name: assignee, schema: { type: string, format: uuid } }
+        - { in: query, name: type, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of tasks, content: { application/json: { schema: { $ref: '#/components/schemas/TaskPage' } } } } }
+    post:
+      operationId: createTask
+      tags: [Tasks]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateTaskRequest' } } }
+      responses: { '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } } }
+  /tasks/{id}:assign:
+    post:
+      operationId: assignTask
+      tags: [Tasks]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { assigneeId: { type: string, format: uuid } }, required: [assigneeId] } } }
+      responses: { '200': { description: assigned, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } } }
+  /tasks/{id}:complete:
+    post:
+      operationId: completeTask
+      tags: [Tasks]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: completed, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } } }
+
+  # ---------------- Follow-ups ----------------
+  /follow-ups:
+    get:
+      operationId: listFollowUps
+      tags: [Follow-ups]
+      parameters:
+        - { in: query, name: merchantId, schema: { type: string, format: uuid } }
+        - { in: query, name: agent, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: page of follow-ups, content: { application/json: { schema: { $ref: '#/components/schemas/FollowUpPage' } } } } }
+    post:
+      operationId: logFollowUp
+      tags: [Follow-ups]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/LogFollowUpRequest' } } }
+      responses: { '201': { description: created, content: { application/json: { schema: { $ref: '#/components/schemas/FollowUp' } } } } }
+
+  # ---------------- Device Health ----------------
+  /health/reports:
+    post:
+      operationId: ingestHealthReport
+      tags: [Device Health]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/HealthReportRequest' } } }
+      responses: { '202': { description: accepted } }
+  /health/reports:bulk:
+    post:
+      operationId: ingestHealthReportsBulk
+      tags: [Device Health]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/HealthReportRequest' } } } }
+      responses: { '202': { description: accepted, content: { application/json: { schema: { type: object, properties: { accepted: { type: integer } } } } } } }
+  /health/devices/{id}/latest:
+    get:
+      operationId: getLatestHealth
+      tags: [Device Health]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200': { description: latest health, content: { application/json: { schema: { $ref: '#/components/schemas/LatestHealth' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+
+  # ---------------- Analytics ----------------
+  /analytics/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [Analytics]
+      responses: { '200': { description: dashboard counters, content: { application/json: { schema: { $ref: '#/components/schemas/Dashboard' } } } } }
+  /analytics/transactions/monthly:
+    get:
+      operationId: getMonthlyTransactions
+      tags: [Analytics]
+      parameters:
+        - { in: query, name: month, schema: { type: string, format: date } }
+        - { in: query, name: merchantId, schema: { type: string, format: uuid } }
+      responses: { '200': { description: monthly txn rows, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/MonthlyTxnRow' } } } } } }
+
+  # ---------------- Notifications ----------------
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [Notifications]
+      parameters:
+        - { in: query, name: unreadOnly, schema: { type: boolean, default: false } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses: { '200': { description: inbox page, content: { application/json: { schema: { $ref: '#/components/schemas/NotificationPage' } } } } }
+  /notifications/{id}:read:
+    post:
+      operationId: markNotificationRead
+      tags: [Notifications]
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses: { '200': { description: marked read, content: { application/json: { schema: { $ref: '#/components/schemas/Notification' } } } } }
+  /stream/notifications:
+    get:
+      operationId: streamNotifications
+      tags: [Notifications]
+      description: Server-Sent Events stream of live notifications for the current user.
+      responses: { '200': { description: SSE stream, content: { text/event-stream: { schema: { type: string } } } } }
+
+  # ---------------- AI ----------------
+  /ai/scores:
+    get:
+      operationId: getAiScores
+      tags: [AI]
+      parameters:
+        - { in: query, name: subjectType, required: true, schema: { type: string } }
+        - { in: query, name: id, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: latest scores, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/AiScore' } } } } } }
+  /ai/assistant/ask:
+    post:
+      operationId: askAssistant
+      tags: [AI]
+      description: RAG assistant — grounded, cited answer. `grounded=false` means it declined rather than guessed.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [question], properties: { question: { type: string, maxLength: 2000 } } } } }
+      responses:
+        '200':
+          description: answer
+          content: { application/json: { schema: { $ref: '#/components/schemas/AssistantAnswer' } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    Id: { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    Q: { in: query, name: q, schema: { type: string } }
+    Page: { in: query, name: page, schema: { type: integer, default: 0 } }
+    Limit: { in: query, name: limit, schema: { type: integer, default: 50, maximum: 200 } }
+    IdempotencyKey: { in: header, name: Idempotency-Key, schema: { type: string } }
+
+  responses:
+    Problem:
+      description: RFC 9457 problem details
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    PageMeta:
+      type: object
+      properties:
+        limit: { type: integer }
+        number: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+
+    # Identity
+    Me:
+      type: object
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string }
+        fullName: { type: string }
+        roles: { type: array, items: { type: string } }
+        permissions: { type: array, items: { type: string } }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        fullName: { type: string }
+        status: { type: string }
+    UserPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/User' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+    Employee:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        employeeNo: { type: string }
+        department: { type: string }
+        jobTitle: { type: string }
+        region: { type: string }
+        status: { type: string }
+    EmployeePage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Employee' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Merchant
+    MerchantStatus: { type: string, enum: [ONBOARDING, PENDING_KYC, ACTIVE, SUSPENDED, CLOSED] }
+    OnboardMerchantRequest:
+      type: object
+      required: [merchantNo, legalName]
+      properties:
+        merchantNo: { type: string, maxLength: 40 }
+        legalName: { type: string, maxLength: 200 }
+        tradeName: { type: string }
+        taxId: { type: string }
+        category: { type: string }
+    Merchant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        merchantNo: { type: string }
+        legalName: { type: string }
+        tradeName: { type: string }
+        taxId: { type: string }
+        category: { type: string }
+        status: { $ref: '#/components/schemas/MerchantStatus' }
+        riskTier: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        onboardedAt: { type: string, format: date-time }
+        activatedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+    MerchantPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Merchant' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Device
+    DeviceStatus: { type: string, enum: [IN_STOCK, ALLOCATED, DEPLOYED, FAULTY, IN_REPAIR, RETIRED, LOST] }
+    ReceiveDeviceRequest:
+      type: object
+      required: [serialNo, model]
+      properties:
+        serialNo: { type: string, maxLength: 60 }
+        model: { type: string, maxLength: 60 }
+        vendor: { type: string }
+        terminalId: { type: string }
+        imei: { type: string }
+    Device:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        serialNo: { type: string }
+        terminalId: { type: string }
+        imei: { type: string }
+        model: { type: string }
+        vendor: { type: string }
+        status: { $ref: '#/components/schemas/DeviceStatus' }
+        activeSimId: { type: string, format: uuid }
+        lastActivityAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+    DevicePage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Device' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Deployment
+    DeploymentStatus: { type: string, enum: [PLANNED, IN_PROGRESS, COMPLETED, FAILED, CANCELLED] }
+    PlanDeploymentRequest:
+      type: object
+      required: [scheduledDate, merchantId, branchId]
+      properties:
+        deploymentNo: { type: string }
+        scheduledDate: { type: string, format: date }
+        merchantId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        assignedAgent: { type: string, format: uuid }
+    CompleteDeploymentRequest:
+      type: object
+      required: [deviceId]
+      properties:
+        deviceId: { type: string, format: uuid }
+        receivedBy: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        conversationNotes: { type: string }
+        trelloCardId: { type: string }
+    Deployment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        deploymentNo: { type: string }
+        scheduledDate: { type: string, format: date }
+        merchantId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        deviceId: { type: string, format: uuid }
+        assignedAgent: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/DeploymentStatus' }
+        receivedBy: { type: string }
+        completedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+    DeploymentPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Deployment' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # KYC
+    KycStatus: { type: string, enum: [DRAFT, SUBMITTED, UNDER_REVIEW, PENDING_DOCS, APPROVED, REJECTED] }
+    KycRequest:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        merchantId: { type: string, format: uuid }
+        requestType: { type: string }
+        status: { $ref: '#/components/schemas/KycStatus' }
+        reviewerId: { type: string, format: uuid }
+        decisionReason: { type: string }
+        submittedAt: { type: string, format: date-time }
+        decidedAt: { type: string, format: date-time }
+    KycPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/KycRequest' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Workflow
+    WorkflowStatus: { type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED] }
+    Workflow:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        workflowType: { type: string }
+        subjectType: { type: string }
+        subjectId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WorkflowStatus' }
+        currentStep: { type: integer }
+        totalSteps: { type: integer }
+        initiatedBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+    WorkflowPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Workflow' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Task
+    TaskStatus: { type: string, enum: [OPEN, ASSIGNED, IN_PROGRESS, BLOCKED, DONE, CANCELLED] }
+    TaskPriority: { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string }
+        taskType: { type: string }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        relatedType: { type: string }
+        relatedId: { type: string, format: uuid }
+        dueAt: { type: string, format: date-time }
+    Task:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        taskType: { type: string }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        assigneeId: { type: string, format: uuid }
+        relatedType: { type: string }
+        relatedId: { type: string, format: uuid }
+        dueAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+    TaskPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Task' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Follow-up
+    LogFollowUpRequest:
+      type: object
+      required: [channel]
+      properties:
+        merchantId: { type: string, format: uuid }
+        channel: { type: string, enum: [CALL, SMS, EMAIL, VISIT, WHATSAPP] }
+        outcome: { type: string, enum: [REACHED, NO_ANSWER, CALLBACK, RESOLVED, ESCALATED] }
+        notes: { type: string }
+        contactedPerson: { type: string }
+        contactedPhone: { type: string }
+        nextActionAt: { type: string, format: date-time }
+    FollowUp:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        merchantId: { type: string, format: uuid }
+        agentId: { type: string, format: uuid }
+        channel: { type: string }
+        outcome: { type: string }
+        notes: { type: string }
+        contactedPerson: { type: string }
+        contactedPhone: { type: string }
+        aiGenerated: { type: boolean }
+        contactedAt: { type: string, format: date-time }
+        nextActionAt: { type: string, format: date-time }
+    FollowUpPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/FollowUp' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # Health
+    HealthReportRequest:
+      type: object
+      required: [serialNo]
+      properties:
+        deviceId: { type: string, format: uuid }
+        serialNo: { type: string }
+        deviceStatus: { type: string }
+        batteryLevel: { type: integer }
+        mobileData: { type: string }
+        ipAddress: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        cpuUsage: { type: number, format: double }
+        ramAvailableMb: { type: integer }
+        storageAvailableMb: { type: integer }
+        signalStrength: { type: integer }
+        appVersion: { type: string }
+        osVersion: { type: string }
+        reportedAt: { type: string, format: date-time }
+    LatestHealth:
+      type: object
+      properties:
+        deviceId: { type: string, format: uuid }
+        serialNo: { type: string }
+        deviceStatus: { type: string }
+        batteryLevel: { type: integer }
+        signalStrength: { type: integer }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        reportedAt: { type: string, format: date-time }
+
+    # Analytics
+    Dashboard:
+      type: object
+      properties:
+        totalMerchants: { type: integer, format: int64 }
+        activeMerchants: { type: integer, format: int64 }
+        devicesInStock: { type: integer, format: int64 }
+        devicesDeployed: { type: integer, format: int64 }
+        devicesFaulty: { type: integer, format: int64 }
+        deploymentsToday: { type: integer, format: int64 }
+        openTasks: { type: integer, format: int64 }
+        pendingKyc: { type: integer, format: int64 }
+    MonthlyTxnRow:
+      type: object
+      properties:
+        terminalId: { type: string }
+        terminalName: { type: string }
+        merchantId: { type: string, format: uuid }
+        totalTxnCount: { type: integer, format: int64 }
+        totalTxnAmount: { type: number }
+        santimpayCommission: { type: number }
+        totalCommissionBr: { type: number }
+        totalCommissionCut: { type: number }
+        currency: { type: string }
+
+    # Notification
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        channel: { type: string }
+        template: { type: string }
+        payload: { type: string }
+        status: { type: string }
+        relatedType: { type: string }
+        relatedId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time }
+    NotificationPage:
+      type: object
+      properties: { data: { type: array, items: { $ref: '#/components/schemas/Notification' } }, page: { $ref: '#/components/schemas/PageMeta' } }
+
+    # AI
+    AiScore:
+      type: object
+      properties:
+        subjectType: { type: string }
+        subjectId: { type: string, format: uuid }
+        scoreType: { type: string }
+        value: { type: number }
+        band: { type: string }
+        modelVersion: { type: string }
+        computedAt: { type: string, format: date-time }
+    AssistantAnswer:
+      type: object
+      properties:
+        answer: { type: string }
+        grounded: { type: boolean }
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              sourceType: { type: string }
+              sourceId: { type: string, format: uuid }
+              similarity: { type: number }
+
+    # Errors
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        request_id: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              code: { type: string }
+              message: { type: string }

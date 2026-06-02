@@ -1,0 +1,10 @@
+# Root base: the full posctl app = api + web. Overlays (dev/staging/prod) reference THIS, then patch
+# images, replicas, env and the public host per environment.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - api
+  - web
+  - worker
+commonLabels:
+  app.kubernetes.io/part-of: posctl
