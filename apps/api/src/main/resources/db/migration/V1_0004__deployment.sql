@@ -42,6 +42,7 @@ CREATE TABLE deployment.device_assignments (
   updated_at    timestamptz NOT NULL DEFAULT now(),
   created_by    uuid, updated_by uuid,
   version       integer NOT NULL DEFAULT 0,
+  deleted_at    timestamptz,   -- DeviceAssignment extends AggregateRoot (embedded audit incl. deleted_at)
   -- A device cannot have two overlapping assignment periods:
   CONSTRAINT no_overlapping_assignment EXCLUDE USING gist (
     device_id WITH =,

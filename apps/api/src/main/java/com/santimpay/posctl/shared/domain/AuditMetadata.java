@@ -3,7 +3,6 @@ package com.santimpay.posctl.shared.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
@@ -14,9 +13,12 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * Standard audit columns embedded into every aggregate: who/when created & updated, optimistic
- * locking version, and soft-delete marker. Populated automatically by JPA auditing
- * ({@code @EnableJpaAuditing}) wired to {@link com.santimpay.posctl.shared.audit.AuditorAwareImpl}.
+ * Standard audit columns embedded into every aggregate: who/when created & updated and the
+ * soft-delete marker. Populated automatically by JPA auditing ({@code @EnableJpaAuditing}) wired to
+ * {@link com.santimpay.posctl.shared.audit.AuditorAwareImpl}.
+ *
+ * <p>NOTE: the optimistic-locking {@code @Version} lives on {@link AggregateRoot}, not here — JPA
+ * forbids {@code @Version} inside an {@code @Embeddable}.
  */
 @Getter
 @Embeddable
@@ -38,10 +40,6 @@ public class AuditMetadata {
     @LastModifiedBy
     @Column(name = "updated_by")
     private UUID updatedBy;
-
-    @Version
-    @Column(name = "version", nullable = false)
-    private int version;
 
     @Column(name = "deleted_at")
     private Instant deletedAt;

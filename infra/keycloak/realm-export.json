@@ -21,7 +21,20 @@
       { "name": "COMPLIANCE", "description": "Read-all + KYC/compliance approve" },
       { "name": "DATA_ENCODER", "description": "Merchant/branch/deployment intake" },
       { "name": "IT_ADMIN", "description": "System config / integrations" }
-    ]
+    ],
+    "client": {
+      "posctl-api": [
+        { "name": "merchant:read" }, { "name": "merchant:create" }, { "name": "merchant:update" }, { "name": "merchant:approve" },
+        { "name": "device:read" }, { "name": "device:create" }, { "name": "device:update" }, { "name": "device:assign" }, { "name": "device:retire" }, { "name": "device:telemetry" },
+        { "name": "deployment:read" }, { "name": "deployment:create" }, { "name": "deployment:complete" },
+        { "name": "kyc:read" }, { "name": "kyc:review" }, { "name": "kyc:approve" },
+        { "name": "workflow:read" }, { "name": "workflow:approve" },
+        { "name": "task:read" }, { "name": "task:create" }, { "name": "task:update" }, { "name": "task:assign" },
+        { "name": "followup:read" }, { "name": "followup:create" },
+        { "name": "report:read" }, { "name": "report:export" },
+        { "name": "user:manage" }, { "name": "pii:read" }
+      ]
+    }
   },
 
   "clientScopes": [
@@ -94,22 +107,10 @@
       "enabled": true,
       "bearerOnly": true,
       "publicClient": false,
-      "description": "Resource-server client. Its CLIENT ROLES are the fine-grained resource:action permissions, mapped into the `permissions` token claim and composited into realm roles below.",
-      "roles": [
-        { "name": "merchant:read" }, { "name": "merchant:create" }, { "name": "merchant:update" }, { "name": "merchant:approve" },
-        { "name": "device:read" }, { "name": "device:create" }, { "name": "device:update" }, { "name": "device:assign" }, { "name": "device:retire" }, { "name": "device:telemetry" },
-        { "name": "deployment:read" }, { "name": "deployment:create" }, { "name": "deployment:complete" },
-        { "name": "kyc:read" }, { "name": "kyc:review" }, { "name": "kyc:approve" },
-        { "name": "workflow:read" }, { "name": "workflow:approve" },
-        { "name": "task:read" }, { "name": "task:create" }, { "name": "task:update" }, { "name": "task:assign" },
-        { "name": "followup:read" }, { "name": "followup:create" },
-        { "name": "report:read" }, { "name": "report:export" },
-        { "name": "user:manage" }, { "name": "pii:read" }
-      ]
+      "description": "Resource-server client. Its CLIENT ROLES are the fine-grained resource:action permissions (defined under realm roles.client), mapped into the `permissions` token claim."
     }
   ],
 
-  "__note__": "Realm roles are composited from posctl-api client roles to match the DB seed (V1_0001/0003/0006-0008). Apply the composites with the companion script after import (Keycloak realm JSON can't express client-role composites inline cleanly).",
   "users": [
     {
       "username": "admin@santimpay.com",

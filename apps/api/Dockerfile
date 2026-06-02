@@ -6,19 +6,15 @@ WORKDIR /workspace
 COPY pom.xml ./
 RUN mvn -B -q dependency:go-offline
 COPY src ./src
-RUN mvn -B -DskipTests clean package \
-    && cp target/*.jar app.jar \
-    && java -Djarmode=tools -jar app.jar extract --layers --destination extracted
+RUN mvn -B -DskipTests clean package && cp target/*.jar app.jar
 
 # ---- Runtime stage (distroless, non-root) ----
 FROM gcr.io/distroless/java21-debian12:nonroot AS runtime
 WORKDIR /app
-# Layered copy for better cache reuse
-COPY --from=build /workspace/extracted/dependencies/ ./
-COPY --from=build /workspace/extracted/spring-boot-loader/ ./
-COPY --from=build /workspace/extracted/snapshot-dependencies/ ./
-COPY --from=build /workspace/extracted/application/ ./
+# Run the repackaged fat jar directly. (A layered-jar JarLauncher setup is the optimization for
+# image-cache reuse, but it must lay out BOOT-INF correctly; the plain fat jar is simpler + robust.)
+COPY --from=build /workspace/app.jar ./app.jar
 USER nonroot
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseZGC -XX:+ExitOnOutOfMemoryError"
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

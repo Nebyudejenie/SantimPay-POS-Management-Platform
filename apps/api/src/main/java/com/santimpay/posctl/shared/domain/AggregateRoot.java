@@ -1,8 +1,10 @@
 package com.santimpay.posctl.shared.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +31,11 @@ public abstract class AggregateRoot<T extends AggregateRoot<T>> extends Abstract
 
     @Embedded
     private final AuditMetadata audit = new AuditMetadata();
+
+    /** Optimistic-locking version. On the mapped-superclass because JPA forbids @Version in @Embeddable. */
+    @Version
+    @Column(name = "version", nullable = false)
+    private int version;
 
     @Transient
     private final transient List<Object> raisedEvents = new ArrayList<>();

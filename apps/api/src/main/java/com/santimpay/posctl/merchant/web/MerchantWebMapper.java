@@ -10,6 +10,6 @@ public interface MerchantWebMapper {
 
     @Mapping(target = "createdAt", source = "audit.createdAt")
     @Mapping(target = "updatedAt", source = "audit.updatedAt")
-    @Mapping(target = "version", source = "audit.version")
+    @Mapping(target = "version", source = "version")
     MerchantResponse toResponse(Merchant merchant);
 }

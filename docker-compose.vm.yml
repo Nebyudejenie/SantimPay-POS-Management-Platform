@@ -59,6 +59,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       OIDC_ISSUER_URI: http://keycloak:8081/realms/posctl
+      # Flyway owns the schema; skip Hibernate's stricter type validation for this dev deploy
+      # (it flags citext-vs-varchar etc. which are runtime-compatible). CI keeps ddl-auto=validate.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       POSCTL_WORKER_ENABLED: "false"
     depends_on:
       postgres: { condition: service_healthy }
@@ -76,6 +79,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       OIDC_ISSUER_URI: http://keycloak:8081/realms/posctl
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       POSCTL_WORKER_ENABLED: "true"   # this instance runs the scheduled jobs (outbox relay, scoring)
     depends_on:
       api: { condition: service_started }   # let api run Flyway migrations first
