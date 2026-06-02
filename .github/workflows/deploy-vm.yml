@@ -1,0 +1,52 @@
+name: deploy-vm
+# Push-to-deploy via the self-hosted runner ON the Proxmox VM (rootless Docker, no sudo / no k8s).
+# This is the "GitHub way" within this VM's constraints: git push -> Actions -> compose build+up.
+# (Full GitOps — Harbor + ArgoCD + RKE2 — needs passwordless sudo to install Kubernetes; see RUNBOOK.)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'docker-compose.vm.yml'
+      - 'infra/keycloak/**'
+      - '.github/workflows/deploy-vm.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-vm
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, posctl-vm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image (memory-capped so the VM stays healthy)
+        run: docker build --memory=4g --memory-swap=6g -t posctl-api:latest apps/api
+
+      - name: Deploy stack (compose up; recreates changed services)
+        run: |
+          docker compose -f docker-compose.vm.yml up -d --no-build postgres redis minio keycloak
+          docker compose -f docker-compose.vm.yml up -d --force-recreate api worker
+
+      - name: Wait for API to boot
+        run: |
+          for i in $(seq 1 40); do
+            if docker logs --since 90s posctl-api-1 2>&1 | grep -q "Started PosctlApplication"; then
+              echo "API booted"; exit 0
+            fi
+            if docker logs --since 90s posctl-api-1 2>&1 | grep -q "APPLICATION FAILED"; then
+              echo "API failed to start"; docker logs --tail 40 posctl-api-1; exit 1
+            fi
+            sleep 6
+          done
+          echo "timed out waiting for API"; docker logs --tail 40 posctl-api-1; exit 1
+
+      - name: Smoke test (security active => 401 unauthenticated is success)
+        run: |
+          code=$(curl -s -m8 -o /dev/null -w '%{http_code}' localhost:8080/api/v1/merchants || echo 000)
+          echo "GET /api/v1/merchants -> $code"
+          [ "$code" = "401" ] || { echo "unexpected status"; exit 1; }
+          echo "Deploy verified: API up, security enforcing auth."
