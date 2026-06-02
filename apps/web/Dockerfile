@@ -3,7 +3,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile || pnpm install
+# No lockfile committed yet -> plain install (generates one in-image). Commit pnpm-lock.yaml later
+# to make builds reproducible + restore --frozen-lockfile.
+RUN pnpm install --no-frozen-lockfile
 COPY . .
 RUN npx vite build
 
