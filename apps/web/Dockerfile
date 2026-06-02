@@ -5,7 +5,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile || pnpm install
 COPY . .
-RUN pnpm build
+RUN npx vite build
 
 # ---- Serve (static, via nginx-unprivileged, non-root) ----
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime

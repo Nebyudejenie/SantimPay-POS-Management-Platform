@@ -26,10 +26,14 @@ jobs:
       - name: Build API image (memory-capped so the VM stays healthy)
         run: docker build --memory=4g --memory-swap=6g -t posctl-api:latest apps/api
 
+      - name: Build Web image
+        run: docker build --memory=4g --memory-swap=6g -t posctl-web:latest apps/web
+
       - name: Deploy stack (compose up; recreates changed services)
         run: |
           docker compose -f docker-compose.vm.yml up -d --no-build postgres redis minio keycloak
           docker compose -f docker-compose.vm.yml up -d --force-recreate api worker
+          docker compose -f docker-compose.vm.yml up -d --force-recreate web
 
       - name: Wait for API to boot
         run: |

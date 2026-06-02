@@ -44,6 +44,7 @@ public class SecurityConfig {
         http
             .securityMatcher(new org.springframework.security.web.util.matcher.OrRequestMatcher(
                 EndpointRequest.toAnyEndpoint(),
+                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/v3/api-docs/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui/**"),
                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/swagger-ui.html")))
