@@ -3,9 +3,12 @@ FROM node:22-alpine AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml* ./
-# No lockfile committed yet -> plain install (generates one in-image). Commit pnpm-lock.yaml later
-# to make builds reproducible + restore --frozen-lockfile.
-RUN pnpm install --no-frozen-lockfile
+# No lockfile committed yet -> plain install. pnpm 10 exits non-zero on ERR_PNPM_IGNORED_BUILDS
+# (a warning about postinstall scripts it auto-skips); that's benign for a static SPA, so don't let
+# it fail the image build. Vite/esbuild don't need their postinstall here.
+RUN pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false || true; \
+    pnpm approve-builds 2>/dev/null || true; \
+    test -d node_modules/vite || pnpm install --no-frozen-lockfile
 COPY . .
 RUN npx vite build
 
