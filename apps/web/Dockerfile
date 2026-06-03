@@ -17,7 +17,7 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 USER root
 # Self-signed cert for the single-origin HTTPS dev deploy (gives the browser a secure context so
 # OIDC PKCE / crypto.subtle works). Production terminates TLS at Cloudflare instead.
-RUN mkdir -p /etc/nginx/certs && \
+RUN apk add --no-cache openssl && mkdir -p /etc/nginx/certs && \
     openssl req -x509 -nodes -newkey rsa:2048 -days 825 \
       -keyout /etc/nginx/certs/server.key -out /etc/nginx/certs/server.crt \
       -subj "/CN=posctl" -addext "subjectAltName=IP:192.168.1.40,DNS:localhost" && \
