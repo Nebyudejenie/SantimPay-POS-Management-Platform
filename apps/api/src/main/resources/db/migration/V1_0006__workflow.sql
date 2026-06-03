@@ -32,7 +32,8 @@ CREATE TABLE workflow.workflow_approvals (
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
   created_by  uuid, updated_by uuid,
-  version     integer NOT NULL DEFAULT 0
+  version     integer NOT NULL DEFAULT 0,
+  deleted_at  timestamptz   -- WorkflowApproval extends AggregateRoot (embedded audit incl. deleted_at)
 );
 CREATE INDEX ix_wf_appr_instance ON workflow.workflow_approvals(instance_id);
 

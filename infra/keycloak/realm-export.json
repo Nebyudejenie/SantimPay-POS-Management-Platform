@@ -291,6 +291,44 @@
           "pii:read"
         ]
       }
+    },
+    {
+      "username": "checker@santimpay.com",
+      "enabled": true,
+      "email": "checker@santimpay.com",
+      "emailVerified": true,
+      "firstName": "Check",
+      "lastName": "Er",
+      "attributes": {
+        "uid": [
+          "00000000-0000-0000-0000-000000000002"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "checker",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "OPS_MANAGER"
+      ],
+      "clientRoles": {
+        "posctl-api": [
+          "workflow:read",
+          "workflow:approve",
+          "merchant:read",
+          "merchant:approve",
+          "kyc:read",
+          "kyc:review",
+          "kyc:approve",
+          "deployment:read",
+          "device:read",
+          "report:read",
+          "task:read"
+        ]
+      }
     }
   ]
 }
