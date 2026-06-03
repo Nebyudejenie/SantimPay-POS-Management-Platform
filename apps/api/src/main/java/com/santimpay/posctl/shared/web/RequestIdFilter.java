@@ -10,8 +10,6 @@ import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -35,8 +33,10 @@ public class RequestIdFilter extends OncePerRequestFilter {
             requestId = "req_" + UUID.randomUUID().toString().replace("-", "");
         }
         MDC.put(MDC_KEY, requestId);
-        RequestContextHolder.currentRequestAttributes()
-                .setAttribute(REQUEST_ID_ATTR, requestId, RequestAttributes.SCOPE_REQUEST);
+        // Set directly on the request — never via RequestContextHolder, which throws
+        // IllegalStateException when this filter re-runs on the ERROR dispatch (no bound context),
+        // turning every error into a 500. (That masked auth 401s + actuator/docs as 500s.)
+        request.setAttribute(REQUEST_ID_ATTR, requestId);
         response.setHeader(HEADER, requestId);
         try {
             chain.doFilter(request, response);
