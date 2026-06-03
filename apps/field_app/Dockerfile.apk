@@ -1,0 +1,27 @@
+# Builds the Flutter field app into a release APK inside a container (the VM has no Flutter SDK).
+# Output: /output/app-release.apk (extracted by the build script). Multi-step: scaffold android files,
+# run codegen (freezed/json/drift/retrofit), then build the APK.
+FROM ghcr.io/cirruslabs/flutter:3.24.0 AS build
+WORKDIR /app
+
+# Pre-cache deps using just the manifest for better layer reuse.
+COPY pubspec.yaml ./
+RUN flutter pub get || true
+
+# Bring in the source.
+COPY . .
+
+# The project ships source-only (no android/ ios/). Generate the platform scaffolding in place,
+# then re-get deps, run code generation, and build the release APK.
+RUN set -e; \
+    flutter create --platforms=android --project-name posctl_field . ; \
+    flutter pub get ; \
+    dart run build_runner build --delete-conflicting-outputs ; \
+    flutter build apk --release \
+      --dart-define=API_BASE_URL=https://192.168.1.40:8443/api/v1 \
+      --dart-define=OIDC_ISSUER=https://192.168.1.40:8443/auth/realms/posctl \
+      --dart-define=OIDC_CLIENT_ID=posctl-field
+
+# Tiny final stage just holds the artifact for easy extraction.
+FROM alpine:3 AS artifact
+COPY --from=build /app/build/app/outputs/flutter-apk/app-release.apk /app-release.apk
