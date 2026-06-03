@@ -2,7 +2,6 @@ package com.santimpay.posctl.shared.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.EntityListeners;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
@@ -10,19 +9,19 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Standard audit columns embedded into every aggregate: who/when created & updated and the
- * soft-delete marker. Populated automatically by JPA auditing ({@code @EnableJpaAuditing}) wired to
- * {@link com.santimpay.posctl.shared.audit.AuditorAwareImpl}.
+ * soft-delete marker. Populated automatically by JPA auditing ({@code @EnableJpaAuditing}).
  *
- * <p>NOTE: the optimistic-locking {@code @Version} lives on {@link AggregateRoot}, not here — JPA
- * forbids {@code @Version} inside an {@code @Embeddable}.
+ * <p>The {@code AuditingEntityListener} is registered on {@link AggregateRoot} (the
+ * {@code @MappedSuperclass}), NOT here — Spring Data only fires {@code @CreatedDate}/{@code @CreatedBy}
+ * when the listener is on the entity/superclass; on an {@code @Embeddable} it silently does nothing,
+ * which leaves {@code created_at} null. The {@code @Version} likewise lives on {@link AggregateRoot}
+ * (JPA forbids it in an {@code @Embeddable}).
  */
 @Getter
 @Embeddable
-@EntityListeners(AuditingEntityListener.class)
 public class AuditMetadata {
 
     @CreatedDate

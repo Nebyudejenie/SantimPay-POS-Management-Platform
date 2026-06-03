@@ -2,6 +2,7 @@ package com.santimpay.posctl.shared.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import org.springframework.data.domain.AbstractAggregateRoot;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * Base class for aggregate roots.
@@ -23,6 +25,7 @@ import org.springframework.data.domain.AbstractAggregateRoot;
  */
 @Getter
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)   // fires @CreatedDate/@CreatedBy on the embedded AuditMetadata
 public abstract class AggregateRoot<T extends AggregateRoot<T>> extends AbstractAggregateRoot<T> {
 
     @jakarta.persistence.Id
