@@ -32,7 +32,10 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          # Validate the token's iss against this, but fetch signing keys from jwk-set-uri (which can
+          # be an internal URL) so the API never needs to reach the external https issuer itself.
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8081/realms/posctl}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:}
   # Spring Modulith event publication registry: persist @ApplicationModuleListener events and
   # re-publish any incomplete at shutdown, so a failed/missed async handler is retried on restart.
   modulith:

@@ -31,7 +31,8 @@ jobs:
 
       - name: Deploy stack (compose up; recreates changed services)
         run: |
-          docker compose -f docker-compose.vm.yml up -d --no-build postgres redis minio keycloak
+          docker compose -f docker-compose.vm.yml up -d --no-build postgres redis minio
+          docker compose -f docker-compose.vm.yml up -d --force-recreate --no-build keycloak
           docker compose -f docker-compose.vm.yml up -d --force-recreate api worker
           docker compose -f docker-compose.vm.yml up -d --force-recreate web
 

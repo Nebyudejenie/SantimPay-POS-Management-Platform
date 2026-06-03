@@ -88,12 +88,12 @@
       "redirectUris": [
         "https://app.posctl.santimpay.com/*",
         "http://localhost:5173/*",
-        "http://192.168.1.40:8090/*"
+        "https://192.168.1.40:8443/*"
       ],
       "webOrigins": [
         "https://app.posctl.santimpay.com",
         "http://localhost:5173",
-        "http://192.168.1.40:8090"
+        "https://192.168.1.40:8443"
       ],
       "attributes": { "pkce.code.challenge.method": "S256" },
       "defaultClientScopes": ["openid", "profile", "email", "posctl-permissions"]

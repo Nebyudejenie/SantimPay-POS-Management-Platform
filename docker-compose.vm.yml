@@ -44,7 +44,12 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
-    ports: ["8081:8081"]
+      # Served behind the web nginx at https://<host>:8443/auth — trust the X-Forwarded-* headers so
+      # Keycloak stamps the EXTERNAL https issuer + builds correct login/redirect URLs.
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
+    ports: ["8081:8081"]   # still published for direct admin access
     volumes:
       - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm.json:ro
     restart: unless-stopped
@@ -58,7 +63,11 @@ services:
       POSTGRES_PASSWORD: posctl
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      OIDC_ISSUER_URI: http://keycloak:8081/realms/posctl
+      # Tokens are issued by the EXTERNAL https origin (browser side), but the API validates them
+      # internally: it trusts that issuer string and fetches the signing keys over the in-cluster
+      # http URL (no TLS/hostname headache between containers).
+      OIDC_ISSUER_URI: https://192.168.1.40:8443/auth/realms/posctl
+      OIDC_JWK_SET_URI: http://keycloak:8081/auth/realms/posctl/protocol/openid-connect/certs
       # Flyway owns the schema; skip Hibernate's stricter type validation for this dev deploy
       # (it flags citext-vs-varchar etc. which are runtime-compatible). CI keeps ddl-auto=validate.
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
@@ -87,8 +96,8 @@ services:
 
   web:
     build: { context: ./apps/web }
-    ports: ["8090:8080"]   # 3000 is taken on the VM; serve the SPA on 8090
-    depends_on: [api]
+    ports: ["8443:8443"]   # single-origin HTTPS: SPA + /api + /auth proxied here
+    depends_on: [api, keycloak]
     restart: unless-stopped
 
 volumes:
