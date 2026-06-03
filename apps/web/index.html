@@ -7,6 +7,9 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime config (editable in the served image / mounted file, no rebuild needed).
+         Defaults derive from the current host so the same image works on any address. -->
+    <script src="/config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

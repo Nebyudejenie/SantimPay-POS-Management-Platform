@@ -85,8 +85,16 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "rootUrl": "https://app.posctl.santimpay.com",
-      "redirectUris": ["https://app.posctl.santimpay.com/*", "http://localhost:5173/*"],
-      "webOrigins": ["https://app.posctl.santimpay.com", "http://localhost:5173"],
+      "redirectUris": [
+        "https://app.posctl.santimpay.com/*",
+        "http://localhost:5173/*",
+        "http://192.168.1.40:8090/*"
+      ],
+      "webOrigins": [
+        "https://app.posctl.santimpay.com",
+        "http://localhost:5173",
+        "http://192.168.1.40:8090"
+      ],
       "attributes": { "pkce.code.challenge.method": "S256" },
       "defaultClientScopes": ["openid", "profile", "email", "posctl-permissions"]
     },
