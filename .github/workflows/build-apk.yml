@@ -1,0 +1,67 @@
+name: build-apk
+# Builds the Flutter field app into a release APK on GITHUB-HOSTED runners (ubuntu-latest) — NOT the
+# self-hosted VM — so a heavy Android build can never starve the live deployment. Publishes the APK
+# as a workflow artifact and attaches it to a GitHub Release for download.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/field_app/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # to create the release
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest   # GitHub cloud runner — isolated from the VM
+    defaults:
+      run:
+        working-directory: apps/field_app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.2'
+          channel: stable
+
+      - name: Scaffold Android platform files (project is source-only)
+        run: flutter create --platforms=android --project-name posctl_field --overwrite .
+
+      - name: Resolve deps + ensure codegen tool present
+        run: |
+          flutter pub get
+          flutter pub add --dev build_runner
+
+      - name: Codegen (freezed / json / drift / retrofit)
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release --no-tree-shake-icons \
+            --dart-define=API_BASE_URL=https://192.168.1.40:8443/api/v1 \
+            --dart-define=OIDC_ISSUER=https://192.168.1.40:8443/auth/realms/posctl \
+            --dart-define=OIDC_CLIENT_ID=posctl-field
+
+      - name: Rename artifact
+        run: cp build/app/outputs/flutter-apk/app-release.apk posctl-field.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: posctl-field-apk
+          path: apps/field_app/posctl-field.apk
+          if-no-files-found: error
+
+      - name: Publish to a Release (downloadable link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Field App APK (latest)
+          files: apps/field_app/posctl-field.apk
+          fail_on_unmatched_files: true
