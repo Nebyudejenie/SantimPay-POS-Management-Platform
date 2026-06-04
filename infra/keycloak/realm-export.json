@@ -312,7 +312,10 @@
           "view-users",
           "query-users",
           "manage-realm",
-          "view-realm"
+          "view-realm",
+          "view-clients",
+          "query-clients",
+          "manage-clients"
         ]
       }
     }
