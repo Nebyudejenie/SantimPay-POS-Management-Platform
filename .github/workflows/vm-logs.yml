@@ -1,0 +1,20 @@
+name: vm-logs
+# On-demand diagnostics: dump recent API logs + probe an endpoint from the VM runner.
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: "filter pattern for api logs"
+        default: "Exception|ERROR|Caused by|merchants"
+        required: false
+jobs:
+  logs:
+    runs-on: [self-hosted, posctl-vm]
+    steps:
+      - name: API logs (last 400 lines, filtered)
+        run: |
+          docker logs --tail 400 posctl-api-1 2>&1 | grep -E "${{ github.event.inputs.grep }}" | tail -120 || true
+      - name: Probe /api/v1/merchants from inside VM
+        run: |
+          code=$(curl -s -m8 -o /tmp/body -w '%{http_code}' localhost:8080/api/v1/merchants || echo 000)
+          echo "status=$code"; head -c 600 /tmp/body || true
