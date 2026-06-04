@@ -90,6 +90,7 @@ services:
       OIDC_ISSUER_URI: http://keycloak:8081/realms/posctl
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
       POSCTL_WORKER_ENABLED: "true"   # this instance runs the scheduled jobs (outbox relay, scoring)
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"   # api owns schema; don't crash-loop worker on checksum drift
     depends_on:
       api: { condition: service_started }   # let api run Flyway migrations first
     restart: unless-stopped
