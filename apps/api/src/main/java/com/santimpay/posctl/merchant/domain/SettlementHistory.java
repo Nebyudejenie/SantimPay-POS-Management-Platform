@@ -54,6 +54,19 @@ public class SettlementHistory extends AggregateRoot<SettlementHistory> {
     private String notes;
 
     protected SettlementHistory() {}
+    public UUID getMerchantId() { return merchantId; }
+    public UUID getSettlementAccountId() { return settlementAccountId; }
+    public LocalDate getPeriodFrom() { return periodFrom; }
+    public LocalDate getPeriodTo() { return periodTo; }
+    public BigDecimal getGrossAmount() { return grossAmount; }
+    public BigDecimal getCommissionAmount() { return commissionAmount; }
+    public BigDecimal getNetAmount() { return netAmount; }
+    public Integer getTransactionCount() { return transactionCount; }
+    public String getStatus() { return status; }
+    public Instant getTransferredAt() { return transferredAt; }
+    public UUID getTransferredBy() { return transferredBy; }
+    public String getBankReference() { return bankReference; }
+    public String getNotes() { return notes; }
 
     public static SettlementHistory create(UUID merchantId, LocalDate periodFrom, LocalDate periodTo,
                                            BigDecimal grossAmount, BigDecimal commissionAmount) {

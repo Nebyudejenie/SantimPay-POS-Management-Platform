@@ -49,6 +49,18 @@ public class DeviceMaintenance extends AggregateRoot<DeviceMaintenance> {
 
     protected DeviceMaintenance() {}
 
+    public UUID getDeviceId() { return deviceId; }
+    public String getMaintenanceType() { return maintenanceType; }
+    public String getIssueDescription() { return issueDescription; }
+    public String getResolution() { return resolution; }
+    public String getPartsReplaced() { return partsReplaced; }
+    public UUID getTechnicianId() { return technicianId; }
+    public Instant getStartDate() { return startDate; }
+    public Instant getCompletionDate() { return completionDate; }
+    public BigDecimal getCost() { return cost; }
+    public String getVendorName() { return vendorName; }
+    public boolean isWarrantyClaim() { return warrantyClaim; }
+
     public static DeviceMaintenance initiate(UUID deviceId, String maintenanceType, String issueDescription) {
         if (deviceId == null || maintenanceType == null) {
             throw DomainException.invalidState("deviceId and maintenanceType required");

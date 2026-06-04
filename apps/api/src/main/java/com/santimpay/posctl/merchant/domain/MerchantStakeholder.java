@@ -41,6 +41,14 @@ public class MerchantStakeholder extends AggregateRoot<MerchantStakeholder> {
     private LocalDate activeUntil;
 
     protected MerchantStakeholder() {}
+    public UUID getMerchantId() { return merchantId; }
+    public String getFullName() { return fullName; }
+    public String getRole() { return role; }
+    public String getNationalId() { return nationalId; }
+    public String getPhone() { return phone; }
+    public String getEmail() { return email; }
+    public LocalDate getActiveFrom() { return activeFrom; }
+    public LocalDate getActiveUntil() { return activeUntil; }
 
     public static MerchantStakeholder register(UUID merchantId, String fullName, String role) {
         if (merchantId == null || fullName == null || fullName.isBlank() || role == null || role.isBlank()) {

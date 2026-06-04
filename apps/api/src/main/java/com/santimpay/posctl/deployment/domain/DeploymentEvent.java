@@ -43,6 +43,16 @@ public class DeploymentEvent extends AggregateRoot<DeploymentEvent> {
     private String remarks;
 
     protected DeploymentEvent() {}
+    public UUID getDeploymentId() { return deploymentId; }
+    public String getEventType() { return eventType; }
+    public String getEventStatus() { return eventStatus; }
+    public Instant getEventTimestamp() { return eventTimestamp; }
+    public UUID getAgentId() { return agentId; }
+    public String getDescription() { return description; }
+    public String getPhotoUrl() { return photoUrl; }
+    public Double getGpsLatitude() { return gpsLatitude; }
+    public Double getGpsLongitude() { return gpsLongitude; }
+    public String getRemarks() { return remarks; }
 
     public static DeploymentEvent create(UUID deploymentId, String eventType, String eventStatus) {
         if (deploymentId == null || eventType == null) {

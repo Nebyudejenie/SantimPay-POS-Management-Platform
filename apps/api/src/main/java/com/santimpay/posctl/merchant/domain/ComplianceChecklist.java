@@ -39,6 +39,14 @@ public class ComplianceChecklist extends AggregateRoot<ComplianceChecklist> {
     private String evidenceLink;
 
     protected ComplianceChecklist() {}
+    public UUID getMerchantId() { return merchantId; }
+    public String getCheckType() { return checkType; }
+    public String getStatus() { return status; }
+    public UUID getCheckedBy() { return checkedBy; }
+    public Instant getCheckedAt() { return checkedAt; }
+    public LocalDate getExpiryDate() { return expiryDate; }
+    public String getFindings() { return findings; }
+    public String getEvidenceLink() { return evidenceLink; }
 
     public static ComplianceChecklist initiate(UUID merchantId, String checkType) {
         if (merchantId == null || checkType == null) {

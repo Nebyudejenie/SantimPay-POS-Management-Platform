@@ -33,6 +33,13 @@ public class SimAllocationHistory extends AggregateRoot<SimAllocationHistory> {
 
     protected SimAllocationHistory() {}
 
+    public UUID getDeviceId() { return deviceId; }
+    public UUID getSimId() { return simId; }
+    public Instant getAllocatedAt() { return allocatedAt; }
+    public Instant getDeallocatedAt() { return deallocatedAt; }
+    public String getReason() { return reason; }
+    public UUID getAllocatedBy() { return allocatedBy; }
+
     public static SimAllocationHistory allocate(UUID deviceId, UUID simId, String reason) {
         if (deviceId == null || simId == null) {
             throw DomainException.invalidState("deviceId and simId required");

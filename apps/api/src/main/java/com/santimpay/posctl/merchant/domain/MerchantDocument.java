@@ -48,6 +48,16 @@ public class MerchantDocument extends AggregateRoot<MerchantDocument> {
     private boolean isCurrent;
 
     protected MerchantDocument() {}
+    public UUID getMerchantId() { return merchantId; }
+    public String getDocumentType() { return documentType; }
+    public String getDocumentNumber() { return documentNumber; }
+    public LocalDate getIssueDate() { return issueDate; }
+    public LocalDate getExpiryDate() { return expiryDate; }
+    public String getIssuingAuthority() { return issuingAuthority; }
+    public String getFilePath() { return filePath; }
+    public UUID getVerifiedBy() { return verifiedBy; }
+    public Instant getVerifiedAt() { return verifiedAt; }
+    public String getVerificationNotes() { return verificationNotes; }
 
     public static MerchantDocument submit(UUID merchantId, String documentType, String documentNumber,
                                           LocalDate issueDate, LocalDate expiryDate, String filePath) {
