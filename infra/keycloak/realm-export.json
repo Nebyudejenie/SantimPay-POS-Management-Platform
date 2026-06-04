@@ -234,6 +234,16 @@
       "bearerOnly": true,
       "publicClient": false,
       "description": "Resource-server client. Its CLIENT ROLES are the fine-grained resource:action permissions (defined under realm roles.client), mapped into the `permissions` token claim."
+    },
+    {
+      "clientId": "posctl-admin-cli",
+      "name": "POS Admin Service Account (Keycloak Admin API)",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "posctl-admin-secret",
+      "description": "Confidential service account the backend uses (client_credentials) to manage realm users via the Keycloak Admin API \u2014 so a Super Admin can create users from inside the app. In prod the secret comes from Vault, not the realm file."
     }
   ],
   "users": [
@@ -293,297 +303,16 @@
       }
     },
     {
-      "username": "checker@santimpay.com",
+      "username": "service-account-posctl-admin-cli",
       "enabled": true,
-      "email": "checker@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Check",
-      "lastName": "Er",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000002"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "checker",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "OPS_MANAGER"
-      ],
+      "serviceAccountClientId": "posctl-admin-cli",
       "clientRoles": {
-        "posctl-api": [
-          "workflow:read",
-          "workflow:approve",
-          "merchant:read",
-          "merchant:approve",
-          "kyc:read",
-          "kyc:review",
-          "kyc:approve",
-          "deployment:read",
-          "device:read",
-          "report:read",
-          "task:read"
-        ]
-      }
-    },
-    {
-      "username": "ops@santimpay.com",
-      "enabled": true,
-      "email": "ops@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Ops Manager",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000011"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "ops",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "OPS_MANAGER"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "merchant:create",
-          "merchant:update",
-          "merchant:approve",
-          "device:read",
-          "device:create",
-          "device:update",
-          "device:assign",
-          "device:retire",
-          "device:telemetry",
-          "deployment:read",
-          "deployment:create",
-          "deployment:complete",
-          "kyc:read",
-          "report:read",
-          "report:export",
-          "task:read",
-          "task:create",
-          "task:update",
-          "task:assign",
-          "workflow:read",
-          "workflow:approve",
-          "followup:read",
-          "followup:create"
-        ]
-      }
-    },
-    {
-      "username": "callcenter@santimpay.com",
-      "enabled": true,
-      "email": "callcenter@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Call Center",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000012"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "callcenter",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "CALL_CENTER"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "device:read",
-          "deployment:read",
-          "kyc:read",
-          "task:read",
-          "task:update",
-          "workflow:read",
-          "followup:read",
-          "followup:create"
-        ]
-      }
-    },
-    {
-      "username": "field@santimpay.com",
-      "enabled": true,
-      "email": "field@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Field Officer",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000013"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "field",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "FIELD_OFFICER"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "device:read",
-          "device:assign",
-          "device:update",
-          "device:telemetry",
-          "deployment:read",
-          "deployment:create",
-          "deployment:complete",
-          "task:read",
-          "task:update"
-        ]
-      }
-    },
-    {
-      "username": "finance@santimpay.com",
-      "enabled": true,
-      "email": "finance@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Finance",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000014"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "finance",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "FINANCE"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "report:read",
-          "report:export",
-          "kyc:read",
-          "kyc:approve"
-        ]
-      }
-    },
-    {
-      "username": "compliance@santimpay.com",
-      "enabled": true,
-      "email": "compliance@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Compliance",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000015"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "compliance",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "COMPLIANCE"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "device:read",
-          "deployment:read",
-          "kyc:read",
-          "kyc:review",
-          "kyc:approve",
-          "report:read",
-          "workflow:read"
-        ]
-      }
-    },
-    {
-      "username": "encoder@santimpay.com",
-      "enabled": true,
-      "email": "encoder@santimpay.com",
-      "emailVerified": true,
-      "firstName": "Data Encoder",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000016"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "encoder",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "DATA_ENCODER"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "merchant:read",
-          "merchant:create",
-          "merchant:update",
-          "deployment:read",
-          "deployment:create",
-          "kyc:read",
-          "followup:create",
-          "task:read"
-        ]
-      }
-    },
-    {
-      "username": "it@santimpay.com",
-      "enabled": true,
-      "email": "it@santimpay.com",
-      "emailVerified": true,
-      "firstName": "It Admin",
-      "lastName": "Demo",
-      "attributes": {
-        "uid": [
-          "00000000-0000-0000-0000-000000000017"
-        ]
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "it",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "IT_ADMIN"
-      ],
-      "clientRoles": {
-        "posctl-api": [
-          "device:read",
-          "deployment:read",
-          "report:read",
-          "user:manage"
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users",
+          "manage-realm",
+          "view-realm"
         ]
       }
     }

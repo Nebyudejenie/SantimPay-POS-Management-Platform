@@ -54,6 +54,13 @@ posctl:
     enabled: ${POSCTL_WORKER_ENABLED:false}
   ai:
     scoring-cron: "0 30 2 * * *"   # nightly merchant health+risk scoring (worker only)
+  # Keycloak Admin API access for user provisioning (secret from Vault in prod).
+  keycloak:
+    base-url: ${KC_BASE_URL:http://keycloak:8081/auth}
+    realm: ${KC_REALM:posctl}
+    admin-client-id: ${KC_ADMIN_CLIENT_ID:posctl-admin-cli}
+    admin-client-secret: ${KC_ADMIN_CLIENT_SECRET:posctl-admin-secret}
+    api-client-id: ${KC_API_CLIENT_ID:posctl-api}
 
 management:
   endpoints:

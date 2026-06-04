@@ -9,6 +9,7 @@ import DeploymentsPage from "@/features/deployment/DeploymentsPage";
 import KycPage from "@/features/kyc/KycPage";
 import WorkflowsPage from "@/features/workflow/WorkflowsPage";
 import TasksPage from "@/features/tasks/TasksPage";
+import AdminUsersPage from "@/features/admin/AdminUsersPage";
 
 /**
  * Route tree. Auth is enforced in App.tsx (everything under AppLayout is private). Every nav target
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: "kyc", element: <KycPage /> },
       { path: "workflows", element: <WorkflowsPage /> },
       { path: "tasks", element: <TasksPage /> },
+      { path: "admin/users", element: <AdminUsersPage /> },
       // Catch-all: send unknown paths back to the dashboard rather than a hard 404.
       { path: "*", element: <Navigate to="/dashboard" replace /> },
     ],

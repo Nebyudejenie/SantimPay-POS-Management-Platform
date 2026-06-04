@@ -17,6 +17,7 @@ const navItems: { label: string; path: string; perm?: string }[] = [
   { label: "KYC", path: "/kyc", perm: "kyc:read" },
   { label: "Approvals", path: "/workflows", perm: "workflow:read" },
   { label: "Tasks", path: "/tasks", perm: "task:read" },
+  { label: "Admin · Users", path: "/admin/users", perm: "user:manage" },
 ];
 
 export default function AppLayout() {
