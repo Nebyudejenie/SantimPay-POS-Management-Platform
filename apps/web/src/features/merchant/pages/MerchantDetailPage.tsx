@@ -1,9 +1,60 @@
-import { Box, Button, Chip, Grid, Paper, Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import {
+  Box, Button, Chip, Grid, List, ListItem, ListItemText, Paper, Stack, TextField, Typography,
+} from "@mui/material";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Can } from "@/lib/rbac";
 import { http } from "@/lib/http";
 import { useActivateMerchant, useMerchant } from "../api/merchantApi";
+
+interface BranchRow { id: string; branchNo: string; name: string; city?: string; region?: string; status: string; }
+
+/** Branch intake — DATA_ENCODER's core surface (list + add branches to a merchant). */
+function Branches({ merchantId }: { merchantId: string }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["branches", merchantId],
+    queryFn: async () => (await http.get<BranchRow[]>(`/merchants/${merchantId}/branches`)).data,
+  });
+  const [form, setForm] = useState({ branchNo: "", name: "", city: "", region: "", contactPhone: "" });
+  const add = useMutation({
+    mutationFn: async () => (await http.post(`/merchants/${merchantId}/branches`, form)).data,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["branches", merchantId] });
+      setForm({ branchNo: "", name: "", city: "", region: "", contactPhone: "" }); },
+  });
+
+  return (
+    <Paper sx={{ p: 3, mt: 2 }}>
+      <Typography variant="subtitle1" gutterBottom>Branches</Typography>
+      <List dense>
+        {(data ?? []).map((b) => (
+          <ListItem key={b.id} secondaryAction={<Chip size="small" label={b.status} />}>
+            <ListItemText primary={`${b.branchNo} · ${b.name}`}
+              secondary={[b.city, b.region].filter(Boolean).join(", ")} />
+          </ListItem>
+        ))}
+        {(data ?? []).length === 0 && <ListItem><ListItemText secondary="No branches yet." /></ListItem>}
+      </List>
+      <Can permission="merchant:create">
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1} flexWrap="wrap" useFlexGap>
+          <TextField size="small" label="Branch #" value={form.branchNo}
+            onChange={(e) => setForm({ ...form, branchNo: e.target.value })} />
+          <TextField size="small" label="Name" value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <TextField size="small" label="City" value={form.city}
+            onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          <TextField size="small" label="Region" value={form.region}
+            onChange={(e) => setForm({ ...form, region: e.target.value })} />
+          <TextField size="small" label="Phone" value={form.contactPhone}
+            onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
+          <Button variant="contained" disabled={add.isPending || !form.branchNo || !form.name}
+            onClick={() => add.mutate()}>Add branch</Button>
+        </Stack>
+      </Can>
+    </Paper>
+  );
+}
 
 interface AiScore { scoreType: string; value: number; band: string; modelVersion: string; computedAt: string; }
 
@@ -86,6 +137,8 @@ export default function MerchantDetailPage() {
           <Field label="Activated" value={m.activatedAt} />
         </Grid>
       </Paper>
+
+      <Branches merchantId={m.id} />
 
       <Can permission="report:read">
         <AiScores merchantId={m.id} />

@@ -8,24 +8,25 @@ import { usePermissions } from "@/lib/rbac";
 
 const DRAWER_WIDTH = 220;
 
-/** Nav item with the permission required to see it (server still enforces). */
-const navItems: { label: string; path: string; perm?: string }[] = [
-  { label: "Dashboard", path: "/dashboard", perm: "report:read" },
-  { label: "Merchants", path: "/merchants", perm: "merchant:read" },
-  { label: "Devices", path: "/devices", perm: "device:read" },
-  { label: "Deployments", path: "/deployments", perm: "deployment:read" },
-  { label: "KYC", path: "/kyc", perm: "kyc:read" },
-  { label: "Approvals", path: "/workflows", perm: "workflow:read" },
-  { label: "Tasks", path: "/tasks", perm: "task:read" },
-  { label: "Follow-ups", path: "/follow-ups", perm: "followup:read" },
-  { label: "Reports", path: "/reports", perm: "report:read" },
-  { label: "Admin · Users", path: "/admin/users", perm: "user:manage" },
+/** Nav item; visible if the user has ANY of `perms` (server still enforces). */
+const navItems: { label: string; path: string; perms: string[] }[] = [
+  { label: "Dashboard", path: "/dashboard", perms: ["report:read"] },
+  { label: "Merchants", path: "/merchants", perms: ["merchant:read"] },
+  { label: "Devices", path: "/devices", perms: ["device:read"] },
+  { label: "Deployments", path: "/deployments", perms: ["deployment:read"] },
+  { label: "KYC", path: "/kyc", perms: ["kyc:read"] },
+  { label: "Approvals", path: "/workflows", perms: ["workflow:read"] },
+  { label: "Tasks", path: "/tasks", perms: ["task:read"] },
+  // Follow-ups: visible to anyone who can read OR log them (call-center + data-encoder).
+  { label: "Follow-ups", path: "/follow-ups", perms: ["followup:read", "followup:create"] },
+  { label: "Reports", path: "/reports", perms: ["report:read"] },
+  { label: "Admin · Users", path: "/admin/users", perms: ["user:manage"] },
 ];
 
 export default function AppLayout() {
   const auth = useAuth();
   const perms = usePermissions();
-  const visible = navItems.filter((i) => !i.perm || perms.has(i.perm));
+  const visible = navItems.filter((i) => i.perms.length === 0 || i.perms.some((p) => perms.has(p)));
 
   return (
     <Box sx={{ display: "flex" }}>
