@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface DeviceMaintenanceJpaRepository extends JpaRepository<DeviceMaintenance, UUID> {
+interface DeviceMaintenanceJpaRepository extends JpaRepository<DeviceMaintenance, UUID> {
     @Query("select m from DeviceMaintenance m where m.deviceId = :did and m.audit.deletedAt is null order by m.startDate desc")
     List<DeviceMaintenance> findByDevice(@Param("did") UUID deviceId);
 
@@ -16,7 +16,7 @@ public interface DeviceMaintenanceJpaRepository extends JpaRepository<DeviceMain
     List<DeviceMaintenance> findOpenByDevice(@Param("did") UUID deviceId);
 }
 
-public interface SimAllocationHistoryJpaRepository extends JpaRepository<SimAllocationHistory, UUID> {
+interface SimAllocationHistoryJpaRepository extends JpaRepository<SimAllocationHistory, UUID> {
     @Query("select a from SimAllocationHistory a where a.deviceId = :did and a.audit.deletedAt is null order by a.allocatedAt desc")
     List<SimAllocationHistory> findByDevice(@Param("did") UUID deviceId);
 

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface DeploymentEventJpaRepository extends JpaRepository<DeploymentEvent, UUID> {
+interface DeploymentEventJpaRepository extends JpaRepository<DeploymentEvent, UUID> {
     @Query("select e from DeploymentEvent e where e.deploymentId = :depId and e.audit.deletedAt is null order by e.eventTimestamp asc")
     List<DeploymentEvent> findByDeployment(@Param("depId") UUID deploymentId);
 

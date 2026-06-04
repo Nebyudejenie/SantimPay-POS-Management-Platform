@@ -9,12 +9,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface SettlementHistoryJpaRepository extends JpaRepository<SettlementHistory, UUID> {
+interface SettlementHistoryJpaRepository extends JpaRepository<SettlementHistory, UUID> {
     @Query("select s from SettlementHistory s where s.merchantId = :mid and s.audit.deletedAt is null order by s.periodTo desc")
     Page<SettlementHistory> findByMerchant(@Param("mid") UUID merchantId, Pageable pageable);
 }
 
-public interface MerchantDocumentJpaRepository extends JpaRepository<MerchantDocument, UUID> {
+interface MerchantDocumentJpaRepository extends JpaRepository<MerchantDocument, UUID> {
     @Query("select d from MerchantDocument d where d.merchantId = :mid and d.audit.deletedAt is null order by d.expiryDate asc")
     List<MerchantDocument> findByMerchant(@Param("mid") UUID merchantId);
 
@@ -22,7 +22,7 @@ public interface MerchantDocumentJpaRepository extends JpaRepository<MerchantDoc
     List<MerchantDocument> findByMerchantAndType(@Param("mid") UUID merchantId, @Param("type") String documentType);
 }
 
-public interface ComplianceChecklistJpaRepository extends JpaRepository<ComplianceChecklist, UUID> {
+interface ComplianceChecklistJpaRepository extends JpaRepository<ComplianceChecklist, UUID> {
     @Query("select c from ComplianceChecklist c where c.merchantId = :mid and c.audit.deletedAt is null order by c.checkedAt desc")
     List<ComplianceChecklist> findByMerchant(@Param("mid") UUID merchantId);
 
@@ -30,7 +30,7 @@ public interface ComplianceChecklistJpaRepository extends JpaRepository<Complian
     ComplianceChecklist findLatestCheck(@Param("mid") UUID merchantId, @Param("type") String checkType);
 }
 
-public interface MerchantStakeholderJpaRepository extends JpaRepository<MerchantStakeholder, UUID> {
+interface MerchantStakeholderJpaRepository extends JpaRepository<MerchantStakeholder, UUID> {
     @Query("select s from MerchantStakeholder s where s.merchantId = :mid and s.audit.deletedAt is null order by s.isPrimary desc, s.fullName")
     List<MerchantStakeholder> findByMerchant(@Param("mid") UUID merchantId);
 
