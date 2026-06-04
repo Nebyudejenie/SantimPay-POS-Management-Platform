@@ -40,6 +40,15 @@ public class Employee extends AggregateRoot<Employee> {
 
     protected Employee() {}
 
+    public UUID getUserId() { return userId; }
+    public String getEmployeeNo() { return employeeNo; }
+    public String getDepartment() { return department; }
+    public String getJobTitle() { return jobTitle; }
+    public String getRegion() { return region; }
+    public UUID getManagerId() { return managerId; }
+    public LocalDate getHiredAt() { return hiredAt; }
+    public String getStatus() { return status; }
+
     public static Employee create(UUID userId, String employeeNo, String department,
                                   String jobTitle, String region) {
         Employee e = new Employee();

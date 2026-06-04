@@ -78,6 +78,8 @@ public class PosDevice extends AggregateRoot<PosDevice> {
 
     protected PosDevice() {}
 
+    public DeviceStatus getStatus() { return status; }
+
     /** Factory: receive a brand-new device into stock and raise {@link DeviceReceived}. */
     public static PosDevice receiveIntoStock(String serialNo, String model, String vendor,
                                              String terminalId, String imei) {
