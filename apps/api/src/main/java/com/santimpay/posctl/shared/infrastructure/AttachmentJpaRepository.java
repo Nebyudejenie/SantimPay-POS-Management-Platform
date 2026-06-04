@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-interface AttachmentJpaRepository extends JpaRepository<Attachment, UUID> {
+public interface AttachmentJpaRepository extends JpaRepository<Attachment, UUID> {
     @Query("select a from Attachment a where a.entityType = :type and a.entityId = :id and a.audit.deletedAt is null order by a.createdAt desc")
     List<Attachment> findByEntity(@Param("type") String entityType, @Param("id") UUID entityId);
 
