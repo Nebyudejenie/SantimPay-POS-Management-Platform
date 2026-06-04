@@ -18,12 +18,15 @@ interface MerchantJpaRepository extends JpaRepository<Merchant, UUID> {
 
     boolean existsByMerchantNo(String merchantNo);
 
+    // Cast :q to string explicitly: when null, PostgreSQL otherwise infers the bind type as bytea
+    // and fails with "function lower(bytea) does not exist". The cast pins it to varchar.
     @Query("""
            select m from Merchant m
            where m.audit.deletedAt is null
              and (:status is null or m.status = :status)
-             and (:q is null or lower(m.legalName) like lower(concat('%', :q, '%'))
-                             or lower(m.merchantNo) like lower(concat('%', :q, '%')))
+             and (cast(:q as string) is null
+                  or lower(m.legalName) like lower(concat('%', cast(:q as string), '%'))
+                  or lower(m.merchantNo) like lower(concat('%', cast(:q as string), '%')))
            """)
     Page<Merchant> search(@Param("q") String query,
                           @Param("status") MerchantStatus status,

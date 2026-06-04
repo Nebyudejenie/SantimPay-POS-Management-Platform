@@ -16,8 +16,9 @@ interface UserJpaRepository extends JpaRepository<User, UUID> {
     @Query("""
            select u from User u
            where u.audit.deletedAt is null
-             and (:q is null or lower(u.fullName) like lower(concat('%', :q, '%'))
-                             or lower(u.email) like lower(concat('%', :q, '%')))
+             and (cast(:q as string) is null
+                  or lower(u.fullName) like lower(concat('%', cast(:q as string), '%'))
+                  or lower(u.email) like lower(concat('%', cast(:q as string), '%')))
            """)
     Page<User> search(@Param("q") String query, Pageable pageable);
 }

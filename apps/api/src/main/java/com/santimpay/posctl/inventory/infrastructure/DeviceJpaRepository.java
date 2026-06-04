@@ -17,8 +17,9 @@ interface DeviceJpaRepository extends JpaRepository<PosDevice, UUID> {
            select d from PosDevice d
            where d.audit.deletedAt is null
              and (:status is null or d.status = :status)
-             and (:q is null or lower(d.serialNo) like lower(concat('%', :q, '%'))
-                             or lower(d.terminalId) like lower(concat('%', :q, '%')))
+             and (cast(:q as string) is null
+                  or lower(d.serialNo) like lower(concat('%', cast(:q as string), '%'))
+                  or lower(d.terminalId) like lower(concat('%', cast(:q as string), '%')))
            """)
     Page<PosDevice> search(@Param("q") String query,
                            @Param("status") DeviceStatus status,
