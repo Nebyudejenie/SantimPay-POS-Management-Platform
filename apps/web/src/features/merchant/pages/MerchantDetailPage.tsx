@@ -1,7 +1,41 @@
 import { Box, Button, Chip, Grid, Paper, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { Can } from "@/lib/rbac";
+import { http } from "@/lib/http";
 import { useActivateMerchant, useMerchant } from "../api/merchantApi";
+
+interface AiScore { scoreType: string; value: number; band: string; modelVersion: string; computedAt: string; }
+
+function bandColor(band: string): "default" | "success" | "warning" | "error" {
+  return band === "low" ? "success" : band === "high" ? "error" : "warning";
+}
+
+function AiScores({ merchantId }: { merchantId: string }) {
+  const { data } = useQuery({
+    queryKey: ["ai", "scores", merchantId],
+    queryFn: async () =>
+      (await http.get<AiScore[]>("/ai/scores", { params: { subjectType: "merchant", id: merchantId } })).data,
+  });
+  if (!data?.length) return null;
+  return (
+    <Paper sx={{ p: 3, mt: 2 }}>
+      <Typography variant="subtitle1" gutterBottom>AI Scores</Typography>
+      <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+        {data.map((s) => (
+          <Box key={s.scoreType}>
+            <Typography variant="caption" color="text.secondary">{s.scoreType}</Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="h6">{(s.value * 100).toFixed(0)}%</Typography>
+              <Chip size="small" label={s.band} color={bandColor(s.band)} />
+            </Stack>
+            <Typography variant="caption" color="text.secondary">{s.modelVersion}</Typography>
+          </Box>
+        ))}
+      </Stack>
+    </Paper>
+  );
+}
 
 function Field({ label, value }: { label: string; value?: string }) {
   return (
@@ -52,6 +86,10 @@ export default function MerchantDetailPage() {
           <Field label="Activated" value={m.activatedAt} />
         </Grid>
       </Paper>
+
+      <Can permission="report:read">
+        <AiScores merchantId={m.id} />
+      </Can>
     </Box>
   );
 }

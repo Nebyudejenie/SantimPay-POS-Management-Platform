@@ -10,6 +10,8 @@ import KycPage from "@/features/kyc/KycPage";
 import WorkflowsPage from "@/features/workflow/WorkflowsPage";
 import TasksPage from "@/features/tasks/TasksPage";
 import AdminUsersPage from "@/features/admin/AdminUsersPage";
+import FollowUpsPage from "@/features/followup/FollowUpsPage";
+import ReportsPage from "@/features/reports/ReportsPage";
 
 /**
  * Route tree. Auth is enforced in App.tsx (everything under AppLayout is private). Every nav target
@@ -20,7 +22,8 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
+      // Land on Merchants — every role has merchant:read, so no one hits an empty/forbidden home.
+      { index: true, element: <Navigate to="/merchants" replace /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "merchants", element: <MerchantsListPage /> },
       { path: "merchants/new", element: <OnboardMerchantPage /> },
@@ -30,9 +33,11 @@ export const router = createBrowserRouter([
       { path: "kyc", element: <KycPage /> },
       { path: "workflows", element: <WorkflowsPage /> },
       { path: "tasks", element: <TasksPage /> },
+      { path: "follow-ups", element: <FollowUpsPage /> },
+      { path: "reports", element: <ReportsPage /> },
       { path: "admin/users", element: <AdminUsersPage /> },
-      // Catch-all: send unknown paths back to the dashboard rather than a hard 404.
-      { path: "*", element: <Navigate to="/dashboard" replace /> },
+      // Catch-all: send unknown paths to Merchants (universal read) rather than a hard 404.
+      { path: "*", element: <Navigate to="/merchants" replace /> },
     ],
   },
 ]);
