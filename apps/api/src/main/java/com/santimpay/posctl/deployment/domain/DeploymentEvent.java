@@ -3,6 +3,7 @@ package com.santimpay.posctl.deployment.domain;
 import com.santimpay.posctl.shared.domain.AggregateRoot;
 import com.santimpay.posctl.shared.domain.DomainException;
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 

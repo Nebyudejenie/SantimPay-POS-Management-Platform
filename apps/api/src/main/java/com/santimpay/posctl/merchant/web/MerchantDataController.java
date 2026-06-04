@@ -1,9 +1,10 @@
 package com.santimpay.posctl.merchant.web;
 
 import com.santimpay.posctl.merchant.domain.*;
+import com.santimpay.posctl.merchant.domain.*;
 import com.santimpay.posctl.merchant.infrastructure.*;
 import com.santimpay.posctl.shared.domain.Attachment;
-import com.santimpay.posctl.shared.infrastructure.AttachmentRepositories.AttachmentJpaRepository;
+import com.santimpay.posctl.shared.infrastructure.AttachmentJpaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

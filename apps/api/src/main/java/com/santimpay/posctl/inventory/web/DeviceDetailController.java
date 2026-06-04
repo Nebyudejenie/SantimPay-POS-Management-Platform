@@ -2,8 +2,8 @@ package com.santimpay.posctl.inventory.web;
 
 import com.santimpay.posctl.inventory.domain.DeviceMaintenance;
 import com.santimpay.posctl.inventory.domain.SimAllocationHistory;
-import com.santimpay.posctl.inventory.infrastructure.DeviceDataRepositories.DeviceMaintenanceJpaRepository;
-import com.santimpay.posctl.inventory.infrastructure.DeviceDataRepositories.SimAllocationHistoryJpaRepository;
+import com.santimpay.posctl.inventory.infrastructure.DeviceMaintenanceJpaRepository;
+import com.santimpay.posctl.inventory.infrastructure.SimAllocationHistoryJpaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;

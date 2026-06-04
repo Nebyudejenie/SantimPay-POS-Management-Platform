@@ -1,7 +1,7 @@
 package com.santimpay.posctl.deployment.web;
 
 import com.santimpay.posctl.deployment.domain.DeploymentEvent;
-import com.santimpay.posctl.deployment.infrastructure.DeploymentEventRepositories.DeploymentEventJpaRepository;
+import com.santimpay.posctl.deployment.infrastructure.DeploymentEventJpaRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
