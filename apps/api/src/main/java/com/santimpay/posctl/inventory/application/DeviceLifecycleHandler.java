@@ -5,6 +5,8 @@ import com.santimpay.posctl.inventory.domain.PosDevice;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DeviceLifecycleHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(DeviceLifecycleHandler.class);
+
     private final DeviceRepository repository;
 
     /** Move a device to DEPLOYED when it gets assigned to a branch in the field. Idempotent. */
@@ -25,7 +29,7 @@ public class DeviceLifecycleHandler {
     public void onAssignedToBranch(UUID deviceId) {
         PosDevice device = repository.findById(deviceId).orElse(null);
         if (device == null) {
-            log.warn("DeviceAssigned for unknown device {} — ignoring", deviceId);
+            logger.warn("DeviceAssigned for unknown device {} — ignoring", deviceId);
             return;
         }
         if (device.getStatus() == DeviceStatus.DEPLOYED) {
@@ -36,6 +40,6 @@ public class DeviceLifecycleHandler {
         }
         device.markDeployed();
         repository.save(device);
-        log.info("Device {} moved to DEPLOYED via assignment", deviceId);
+        logger.info("Device {} moved to DEPLOYED via assignment", deviceId);
     }
 }
