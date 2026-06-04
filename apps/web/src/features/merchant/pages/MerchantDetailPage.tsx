@@ -1,5 +1,6 @@
 import {
-  Box, Button, Chip, Grid, List, ListItem, ListItemText, Paper, Stack, TextField, Typography,
+  Box, Button, Checkbox, Chip, FormControlLabel, Grid, List, ListItem, ListItemText,
+  MenuItem, Paper, Stack, TextField, Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -50,6 +51,123 @@ function Branches({ merchantId }: { merchantId: string }) {
             onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
           <Button variant="contained" disabled={add.isPending || !form.branchNo || !form.name}
             onClick={() => add.mutate()}>Add branch</Button>
+        </Stack>
+      </Can>
+    </Paper>
+  );
+}
+
+interface OwnerRow { id: string; fullName: string; nationalId?: string; phone?: string; email?: string; ownershipPct?: number; primary: boolean; }
+
+/** Beneficial owners — the KYC subjects behind the merchant. */
+function Owners({ merchantId }: { merchantId: string }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["owners", merchantId],
+    queryFn: async () => (await http.get<OwnerRow[]>(`/merchants/${merchantId}/owners`)).data,
+  });
+  const empty = { fullName: "", nationalId: "", phone: "", email: "", ownershipPct: "", primary: false };
+  const [form, setForm] = useState(empty);
+  const add = useMutation({
+    mutationFn: async () => (await http.post(`/merchants/${merchantId}/owners`, {
+      ...form, ownershipPct: form.ownershipPct ? Number(form.ownershipPct) : null,
+    })).data,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["owners", merchantId] }); setForm(empty); },
+  });
+
+  return (
+    <Paper sx={{ p: 3, mt: 2 }}>
+      <Typography variant="subtitle1" gutterBottom>Owners</Typography>
+      <List dense>
+        {(data ?? []).map((o) => (
+          <ListItem key={o.id} secondaryAction={
+            <Stack direction="row" spacing={1}>
+              {o.ownershipPct != null && <Chip size="small" label={`${o.ownershipPct}%`} />}
+              {o.primary && <Chip size="small" color="primary" label="primary" />}
+            </Stack>}>
+            <ListItemText primary={o.fullName}
+              secondary={[o.nationalId, o.phone, o.email].filter(Boolean).join(" · ")} />
+          </ListItem>
+        ))}
+        {(data ?? []).length === 0 && <ListItem><ListItemText secondary="No owners yet." /></ListItem>}
+      </List>
+      <Can permission="merchant:create">
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1} flexWrap="wrap" useFlexGap alignItems="center">
+          <TextField size="small" label="Full name" value={form.fullName}
+            onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+          <TextField size="small" label="National ID" value={form.nationalId}
+            onChange={(e) => setForm({ ...form, nationalId: e.target.value })} />
+          <TextField size="small" label="Phone" value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <TextField size="small" label="Email" value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <TextField size="small" label="Ownership %" type="number" sx={{ width: 120 }} value={form.ownershipPct}
+            onChange={(e) => setForm({ ...form, ownershipPct: e.target.value })} />
+          <FormControlLabel control={<Checkbox checked={form.primary}
+            onChange={(e) => setForm({ ...form, primary: e.target.checked })} />} label="Primary" />
+          <Button variant="contained" disabled={add.isPending || !form.fullName}
+            onClick={() => add.mutate()}>Add owner</Button>
+        </Stack>
+      </Can>
+    </Paper>
+  );
+}
+
+interface BankRef { id: string; code: string; name: string; }
+interface SettlementRow { id: string; bankId: string; bankName: string; accountNo: string; accountName: string; currency: string; primary: boolean; verified: boolean; }
+
+/** Settlement (payout) bank accounts — where merchant funds are settled. */
+function SettlementAccounts({ merchantId }: { merchantId: string }) {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["settlements", merchantId],
+    queryFn: async () => (await http.get<SettlementRow[]>(`/merchants/${merchantId}/settlement-accounts`)).data,
+  });
+  const { data: banks } = useQuery({
+    queryKey: ["banks"],
+    queryFn: async () => (await http.get<BankRef[]>("/banks")).data,
+  });
+  const empty = { bankId: "", accountNo: "", accountName: "", currency: "ETB", primary: false };
+  const [form, setForm] = useState(empty);
+  const add = useMutation({
+    mutationFn: async () => (await http.post(`/merchants/${merchantId}/settlement-accounts`, form)).data,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["settlements", merchantId] }); setForm(empty); },
+  });
+
+  return (
+    <Paper sx={{ p: 3, mt: 2 }}>
+      <Typography variant="subtitle1" gutterBottom>Settlement Accounts</Typography>
+      <List dense>
+        {(data ?? []).map((s) => (
+          <ListItem key={s.id} secondaryAction={
+            <Stack direction="row" spacing={1}>
+              <Chip size="small" label={s.currency} />
+              {s.primary && <Chip size="small" color="primary" label="primary" />}
+              <Chip size="small" color={s.verified ? "success" : "default"}
+                label={s.verified ? "verified" : "unverified"} />
+            </Stack>}>
+            <ListItemText primary={`${s.bankName} · ${s.accountNo}`} secondary={s.accountName} />
+          </ListItem>
+        ))}
+        {(data ?? []).length === 0 && <ListItem><ListItemText secondary="No settlement accounts yet." /></ListItem>}
+      </List>
+      <Can permission="merchant:update">
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1} flexWrap="wrap" useFlexGap alignItems="center">
+          <TextField select size="small" label="Bank" sx={{ minWidth: 180 }} value={form.bankId}
+            onChange={(e) => setForm({ ...form, bankId: e.target.value })}>
+            {(banks ?? []).map((b) => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+          </TextField>
+          <TextField size="small" label="Account #" value={form.accountNo}
+            onChange={(e) => setForm({ ...form, accountNo: e.target.value })} />
+          <TextField size="small" label="Account name" value={form.accountName}
+            onChange={(e) => setForm({ ...form, accountName: e.target.value })} />
+          <TextField size="small" label="Currency" sx={{ width: 100 }} value={form.currency}
+            onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+          <FormControlLabel control={<Checkbox checked={form.primary}
+            onChange={(e) => setForm({ ...form, primary: e.target.checked })} />} label="Primary" />
+          <Button variant="contained"
+            disabled={add.isPending || !form.bankId || !form.accountNo || !form.accountName}
+            onClick={() => add.mutate()}>Add account</Button>
         </Stack>
       </Can>
     </Paper>
@@ -137,6 +255,10 @@ export default function MerchantDetailPage() {
           <Field label="Activated" value={m.activatedAt} />
         </Grid>
       </Paper>
+
+      <Owners merchantId={m.id} />
+
+      <SettlementAccounts merchantId={m.id} />
 
       <Branches merchantId={m.id} />
 
