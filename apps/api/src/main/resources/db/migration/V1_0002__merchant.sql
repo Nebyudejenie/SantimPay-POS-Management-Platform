@@ -35,7 +35,6 @@ CREATE TABLE merchant.merchant_owners (
   is_primary    boolean NOT NULL DEFAULT false,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now(),
-  created_by    uuid, updated_by uuid,   -- MerchantOwner extends AggregateRoot (embedded audit)
   version       integer NOT NULL DEFAULT 0,
   deleted_at    timestamptz
 );
@@ -79,7 +78,6 @@ CREATE TABLE merchant.settlement_accounts (
   verified_at  timestamptz,
   created_at   timestamptz NOT NULL DEFAULT now(),
   updated_at   timestamptz NOT NULL DEFAULT now(),
-  created_by   uuid, updated_by uuid,   -- SettlementAccount extends AggregateRoot (embedded audit)
   version      integer NOT NULL DEFAULT 0,
   deleted_at   timestamptz,
   UNIQUE (merchant_id, bank_id, account_no)
