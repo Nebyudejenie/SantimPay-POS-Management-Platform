@@ -1,8 +1,6 @@
 -- V1_0016: Seed Ethiopian banks for settlement account selection
 -- All major Ethiopian commercial banks for merchant settlement selection
 
-DELETE FROM inventory.banks WHERE code IN ('CBE', 'AWASH');
-
 INSERT INTO inventory.banks (id, code, name, swift, is_active) VALUES
   (gen_random_uuid(), 'AWB', 'Awash Bank', 'AWBHETHAXXX', true),
   (gen_random_uuid(), 'CBE', 'Commercial Bank of Ethiopia', 'CBEETHAA', true),
