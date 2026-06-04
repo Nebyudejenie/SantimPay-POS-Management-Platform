@@ -18,3 +18,4 @@ USER nonroot
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseZGC -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["java", "-jar", "app.jar"]
+# Fresh rebuild Thu Jun  4 14:45:59 EAT 2026
