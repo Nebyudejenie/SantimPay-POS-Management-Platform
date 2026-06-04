@@ -93,10 +93,11 @@ public class DeviceDetailController {
     @PreAuthorize("hasAuthority('PERM_device:update')")
     @Transactional
     public ResponseEntity<Void> deallocateSim(@PathVariable UUID deviceId) {
-        simHistory.findCurrentByDevice(deviceId).ifPresent(h -> {
+        SimAllocationHistory h = simHistory.findCurrentByDevice(deviceId);
+        if (h != null) {
             h.deallocate();
             simHistory.save(h);
-        });
+        }
         return ResponseEntity.ok().build();
     }
 }
